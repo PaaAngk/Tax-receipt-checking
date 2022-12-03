@@ -5,3 +5,4 @@ python-dotenv
 PyPDF2
 Pillow
 PyPDF2[image]
+opencv-python

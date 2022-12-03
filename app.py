@@ -82,10 +82,6 @@ with right_column:
                 st.error(item["warn"])
             st.image(item["image"])
 
-# st.markdown("""---""")
-# left_column, right_column = st.columns(2)
-# left_column.write("sddsd")
-# right_column.write("AXZXCHFhfhj")
 
 # ------------------------- #
 

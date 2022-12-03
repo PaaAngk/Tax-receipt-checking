@@ -8,5 +8,4 @@ PyPDF2[image]
 opencv-python-headless
 pyzbar
 pyzbar[scripts]
-zxing
 zbar-tools

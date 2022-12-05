@@ -11,7 +11,7 @@ from PIL import Image, ImageEnhance
 
 
 def decode_qr_data(texts):
-  qr_data_list = []
+  # qr_data_list = []
   try:
     text_value = texts.data.decode('utf-8')
     qr_data_row = text_value.split('?')[-1].split('&')
@@ -20,10 +20,11 @@ def decode_qr_data(texts):
       data = split_row_value.split('=')
       qr_data[data[0]] = data[1]
     if qr_data:
-      qr_data_list.append(qr_data)
+      return qr_data
+      # qr_data_list.append(qr_data)
   except IndexError:
     return None
-  return qr_data_list
+  # return qr_data_list
 
 def plot_qr_image(texts, img):
     try:
@@ -32,7 +33,7 @@ def plot_qr_image(texts, img):
         cx = int(x + w / 2)
         cy = int(y + h / 2)
         cv2.circle(dst, (cx, cy), 2, (0, 255, 0), 8)
-        print('center coords', cx, cy)
+        # print('center coords', cx, cy)
         coordinate = (cx, cy)
         cv2.putText(dst, 'QRcode_location' + str(coordinate), (20, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         cv2.rectangle(dst, (x, y), (x + w, y + h), (0, 255, 255), 2)
@@ -80,15 +81,15 @@ def run_read_image(img):
 
 
 def get_image_from_pdf(document):
-  # pdfFileObj = open('exDoc.pdf', 'rb')
   pdfReader = PyPDF2.PdfFileReader(document)
 
   count = 0
   images = []
   for pageObj_images_number in range(pdfReader.numPages):
     for image_file_object in pdfReader.getPage(pageObj_images_number).images:
-      # enhancer = ImageEnhance.Sharpness(PIL.Image.open(io.BytesIO(image_file_object.data)))
-      # im_output = enhancer.enhance(1.5)
-      images.append( PIL.Image.open(io.BytesIO(image_file_object.data)) )
+      images.append({
+        "image" : PIL.Image.open(io.BytesIO(image_file_object.data)),
+        "name" : image_file_object.name
+      })
       count += 1
   return images

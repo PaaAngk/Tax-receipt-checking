@@ -9,3 +9,4 @@ opencv-python-headless
 pyzbar
 pyzbar[scripts]
 zbar-tools
+flask

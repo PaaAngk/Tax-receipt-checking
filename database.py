@@ -42,9 +42,17 @@ def delete_user(username):
 
 
 # --- Document  ---
-def insert_document(doc_type, doc_number, doc_date, doc_create_date, doc_creater):
+def insert_document(doc_type, doc_number, doc_date, doc_create_date, doc_creater, file_name,status):
     """Returns the user on a successful user creation, otherwise raises and error"""
-    return db_doc.put({"key": doc_number, "doc_type": doc_type, "doc_date": doc_date, "doc_create_date": doc_create_date, "doc_creater": doc_creater})
+    return db_doc.put({
+        "doc_number": doc_number, 
+        "doc_type": doc_type, 
+        "doc_date": doc_date, 
+        "doc_create_date": doc_create_date, 
+        "doc_creater": doc_creater,
+        "file_name" : file_name,
+        "status": status
+    })
 
 
 def fetch_all_document():

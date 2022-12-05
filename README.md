@@ -1,5 +1,13 @@
 
 # Check QR code from document 
 
-## Demo Website
-⭐ Demo
+## Run: 
+```
+pip install -r requirements.txt 
+```
+```
+streamlit run app.py
+```
+```
+flask --app backend --debug run
+```

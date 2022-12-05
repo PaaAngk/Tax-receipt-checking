@@ -23,8 +23,7 @@ usernames = [user["key"] for user in users]
 names = [user["name"] for user in users]
 hashed_passwords = [user["password"] for user in users]
 
-authenticator = stauth.Authenticate(names, usernames, hashed_passwords,
-    "qr_reader", "abcdef", cookie_expiry_days=30)
+authenticator = stauth.Authenticate(names, usernames, hashed_passwords, "qr_reader", "abcdef", cookie_expiry_days=30)
 
 name, authentication_status, username = authenticator.login("Login", "main")
 
@@ -40,9 +39,9 @@ if authentication_status:
 
 
 # ---- SIDEBAR ----
-
-st.sidebar.title(f"Welcome {name}")
-authenticator.logout("Logout", "sidebar")
+if authentication_status:
+    st.sidebar.title(f"Welcome {name}")
+    authenticator.logout("Logout", "sidebar")
 
 # ------------------------- #
 
@@ -99,55 +98,56 @@ def save_uploadedfile(uploadedfile, doc_type, doc_number, doc_date, system_date)
 
 
 # ---- MAINPAGE ----
-st.title("Read QR")
-scanned_qr = []
-not_readed_qr = []
-check_status = None
-left_column, right_column = st.columns(2)
-with left_column:
-    st.subheader("QR load:")
-    with st.form("doc"):
-        doc_type = st.selectbox("Choose document type", ["type1", "type2"])
-        doc_number = st.text_input("Document number")
-        doc_date = st.date_input("Document date")
-        data = st.file_uploader("Upload a document", type=["pdf", "tif", "tiff"])
-        submitted = st.form_submit_button("Send document")
+if authentication_status:
+    st.title("Read QR")
+    scanned_qr = []
+    not_readed_qr = []
+    check_status = None
+    left_column, right_column = st.columns(2)
+    with left_column:
+        st.subheader("QR load:")
+        with st.form("doc"):
+            doc_type = st.selectbox("Choose document type", ["type1", "type2"])
+            doc_number = st.text_input("Document number")
+            doc_date = st.date_input("Document date")
+            data = st.file_uploader("Upload a document", type=["pdf", "tif", "tiff"])
+            submitted = st.form_submit_button("Send document")
 
-        if submitted:
-            if data:
-                with st.spinner("Please wait..."):
-                    _, file_extension = data.type.split('/')
-                    if file_extension == "pdf":
-                        if doc_type and doc_number and doc_date:
-                            system_date = date.today().strftime("%d-%m-%Y")
-                            doc_date = doc_date.strftime("%d-%m-%Y")
-                            images = rec.get_image_from_pdf(data)
-                            for pil_image in images:
-                                scanned_qr.append(rec.read_qr(pil_image["image"]))
+            if submitted:
+                if data:
+                    with st.spinner("Please wait..."):
+                        _, file_extension = data.type.split('/')
+                        if file_extension == "pdf":
+                            if doc_type and doc_number and doc_date:
+                                system_date = date.today().strftime("%d-%m-%Y")
+                                doc_date = doc_date.strftime("%d-%m-%Y")
+                                images = rec.get_image_from_pdf(data)
+                                for pil_image in images:
+                                    scanned_qr.append(rec.read_qr(pil_image["image"]))
 
-                            all_readed_qr, not_readed_qr, check_status = set_readed_image(scanned_qr, images)
-                            file_name = save_uploadedfile(data, doc_type, doc_number, doc_date, system_date)
+                                all_readed_qr, not_readed_qr, check_status = set_readed_image(scanned_qr, images)
+                                file_name = save_uploadedfile(data, doc_type, doc_number, doc_date, system_date)
 
-                            db.insert_document(doc_type, doc_number, doc_date, system_date, name, file_name, check_status)
+                                db.insert_document(doc_type, doc_number, doc_date, system_date, name, file_name, check_status)
+                            else:
+                                st.warning("Please enter all required field")
+
                         else:
-                            st.warning("Please enter all required field")
+                            scanned_qr.append(rec.run_read_image(data))
+                else:
+                    st.warning("Please enter document")
 
-                    else:
-                        scanned_qr.append(rec.run_read_image(data))
-            else:
-                st.warning("Please enter document")
-
-with right_column:
-    st.subheader("QR code scanning result:")
-    if not_readed_qr:
-        for item in not_readed_qr:
-            # if item["data"]:
-            #     st.write(item["data"])
-            # else:
-            st.error(item["status"])
-            st.image(item["image"])
-    if check_status:
-        st.success("Проверка успешна!")
+    with right_column:
+        st.subheader("QR code scanning result:")
+        if not_readed_qr:
+            for item in not_readed_qr:
+                # if item["data"]:
+                #     st.write(item["data"])
+                # else:
+                st.error(item["status"])
+                st.image(item["image"])
+        if check_status:
+            st.success("Проверка успешна!")
 # ------------------------- #
 
 

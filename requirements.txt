@@ -1,4 +1,4 @@
-streamlit_authenticator
+streamlit_authenticator==0.1.5
 streamlit
 deta
 python-dotenv

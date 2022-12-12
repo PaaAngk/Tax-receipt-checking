@@ -58,7 +58,7 @@ def set_readed_image(scanned_qr, images):
                     "title" : image_item["name"],
                     "status" : 1,
                     "data": scanned_item['data'],
-                    "image" : scanned_item['image'],
+                    "readed_image" : scanned_item['image'],
                 })
             else:
                 check_status = 0
@@ -100,7 +100,7 @@ def save_uploadedfile(uploadedfile, doc_type, doc_number, doc_date, system_date)
     return file_name
 
 # ------------------------- #
-
+ 
 nn = None
 
 # ---- MAINPAGE ----

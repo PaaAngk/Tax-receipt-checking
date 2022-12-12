@@ -136,7 +136,6 @@ if authentication_status:
                                 all_readed_qr, not_readed_qr, check_status = set_readed_image(scanned_qr, images)
                                 
                                 # file_name = save_uploadedfile(data, doc_type, doc_number, doc_date, system_date)
-
                                 # db.insert_document(doc_type, doc_number, doc_date, system_date, name, file_name, check_status)
                             else:
                                 st.warning("Please enter all required field")
@@ -155,9 +154,9 @@ if authentication_status:
         st.write("Total: " + str(readed) +  " of " + str(len(all_readed_qr)) )
         if all_readed_qr:
             for item in all_readed_qr:
-                # if item["data"]:
-                #     st.write(item["data"])
-                # else:
+
+                if 'data' in item:
+                  st.write(item["data"])
                 st.error(item["status"])
                 st.image(item["readed_image"])
         if check_status:
@@ -170,10 +169,9 @@ if authentication_status:
 # ---- HIDE STREAMLIT STYLE ----
 hide_st_style = """
 <style>
-
+MainMenu {visibility: hidden;} 
+footer {visibility: hidden;}
+header {visibility: hidden;}
 </style>
 """
 st.markdown(hide_st_style, unsafe_allow_html=True)
-# MainMenu {visibility: hidden;} 
-# footer {visibility: hidden;}
-# header {visibility: hidden;}

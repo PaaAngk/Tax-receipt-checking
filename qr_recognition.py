@@ -6,6 +6,7 @@ import PyPDF2
 import PIL
 import torch
 import io
+from kraken import binarization
 
 
 torch.hub._validate_not_a_forked_repo=lambda a,b,c: True
@@ -81,8 +82,32 @@ def plot_qr_image(texts, img):
 
 
 def concat_image(img):
+  # img_list = []
+  # padding = 200
+  # for img in img:
+  #     img_list.append(cv2.imread(img))
+  # max_width = []
+  # max_height = 0
+  # for img in img_list:
+  #     max_width.append(img.shape[0])
+  #     max_height += img.shape[1]
+  # w = np.max(max_width)
+  # h = max_height + padding
+
+  # # create a new array with a size large enough to contain all the images
+  # final_image = np.zeros((h, w, 3), dtype=np.uint8)
+
+  # current_y = 0  # keep track of where your current image was last placed in the y coordinate
+  # for image in img_list:
+  #     # add an image to the final array and increment the y coordinate
+  #     final_image[current_y:image.shape[0] + current_y, :image.shape[1], :] = image
+  #     current_y += image.shape[0]
+  # return final_image
+
   images = [PIL.Image.fromarray(x) for x in img]
-  min_shape = sorted( [(np.sum(i.size), i.size ) for i in images])[0][1]
+  min_shape = sorted( [(np.sum(i.size), i.size ) for i in images])[-1][-1]
+  # st.write(sorted( [(np.sum(i.size), i.size ) for i in images]))
+  # st.write(min_shape)
   imgs_comb = np.hstack([i.resize(min_shape) for i in images])
   return imgs_comb
 
@@ -94,14 +119,18 @@ def read_qr(img_row, print_result = True):
   rec_images = [x['im'] for x in nn.crop()]
   if len(rec_images)>1:
     img = concat_image(rec_images)
+    st.image(img)
   else:
     img = rec_images[0]
-  st.image(img)
+  
+  # img = binarization.nlbin(PIL.Image.fromarray(img))
+  # st.write(img)
   img = img[:, :, ::-1].copy()
   text = pyzbar.decode(img)
+  st.image(img)
+
   img_row = img
   st.image(nn.render()[0])
-
   readed_image = {}
   if text:
     for texts in text:

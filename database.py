@@ -74,4 +74,7 @@ def update_document(document, updates):
 def delete_user(document):
     """Always returns None, even if the key does not exist"""
     return db_doc.delete(document)
-
+    
+def get_document_search(doc_number, doc_type, doc_date):
+    first_fetch_res = db_doc.fetch([{"doc_number": doc_number, "doc_type": doc_type, "doc_date": doc_date}])
+    return first_fetch_res.items

@@ -7,7 +7,6 @@ import qr_recognition as rec
 from datetime import date
 
 
-# emojis: https://www.webfx.com/tools/emoji-cheat-sheet/
 st.set_page_config(page_title="QR Recognition", page_icon=":bar_chart:", layout="wide")
 
 # --- DEMO PURPOSE ONLY --- #
@@ -58,18 +57,22 @@ def set_readed_image(scanned_qr, images):
                 all_readed_qr.append({
                     "title" : image_item["name"],
                     "status" : 1,
-                    "data": scanned_item['data']
+                    "data": scanned_item['data'],
+                    "image" : scanned_item['image'],
                 })
             else:
                 check_status = 0
                 all_readed_qr.append({
                     "title" : image_item["name"],
-                    "status" : "qr is not correct"
+                    "status" : "qr is not correct", 
+                    "image" : image_item['image'],
+                    "readed_image": scanned_item['image'],
                 })
 
                 not_readed_qr.append({
                     "title" : image_item["name"],
                     "image" : image_item['image'],
+                    "readed_image": scanned_item['image'],
                     "status" : "qr is not correct"
                 })
                 
@@ -77,12 +80,15 @@ def set_readed_image(scanned_qr, images):
             check_status = 0
             all_readed_qr.append({
                 "title" : image_item["name"],
-                "status" : "can not read"
+                "status" : "can not read",
+                "image" : image_item['image'],
+                "readed_image": scanned_item['image'],
             })
 
             not_readed_qr.append({
                 "title" : image_item["name"],
                 "image" : image_item['image'],
+                "readed_image": scanned_item['image'],
                 "status" : "can not read"
             })
     return all_readed_qr, not_readed_qr, check_status
@@ -95,13 +101,14 @@ def save_uploadedfile(uploadedfile, doc_type, doc_number, doc_date, system_date)
 
 # ------------------------- #
 
-
+nn = None
 
 # ---- MAINPAGE ----
 if authentication_status:
     st.title("Read QR")
     scanned_qr = []
     not_readed_qr = []
+    all_readed_qr = []
     check_status = None
     left_column, right_column = st.columns(2)
     with left_column:
@@ -119,6 +126,7 @@ if authentication_status:
                         _, file_extension = data.type.split('/')
                         if file_extension == "pdf":
                             if doc_type and doc_number and doc_date:
+
                                 system_date = date.today().strftime("%d-%m-%Y")
                                 doc_date = doc_date.strftime("%d-%m-%Y")
                                 images = rec.get_image_from_pdf(data)
@@ -126,38 +134,46 @@ if authentication_status:
                                     scanned_qr.append(rec.read_qr(pil_image["image"]))
 
                                 all_readed_qr, not_readed_qr, check_status = set_readed_image(scanned_qr, images)
-                                file_name = save_uploadedfile(data, doc_type, doc_number, doc_date, system_date)
+                                
+                                # file_name = save_uploadedfile(data, doc_type, doc_number, doc_date, system_date)
 
-                                db.insert_document(doc_type, doc_number, doc_date, system_date, name, file_name, check_status)
+                                # db.insert_document(doc_type, doc_number, doc_date, system_date, name, file_name, check_status)
                             else:
                                 st.warning("Please enter all required field")
 
                         else:
+                            # nn = rec.get_prediction(data)
+                            # st.write(nn.crop()['im'])
                             scanned_qr.append(rec.run_read_image(data))
+                            
                 else:
                     st.warning("Please enter document")
-
+# ------------------------- #
     with right_column:
         st.subheader("QR code scanning result:")
-        if not_readed_qr:
-            for item in not_readed_qr:
+        readed = len(all_readed_qr)-len(not_readed_qr)
+        st.write("Total: " + str(readed) +  " of " + str(len(all_readed_qr)) )
+        if all_readed_qr:
+            for item in all_readed_qr:
                 # if item["data"]:
                 #     st.write(item["data"])
                 # else:
                 st.error(item["status"])
-                st.image(item["image"])
+                st.image(item["readed_image"])
         if check_status:
             st.success("Проверка успешна!")
-# ------------------------- #
-
+        # if scanned_qr:
+        #     st.write(scanned_qr[0]['data'])
+        #     st.image(scanned_qr[0]['image'])
 
 
 # ---- HIDE STREAMLIT STYLE ----
 hide_st_style = """
 <style>
-footer {visibility: hidden;}
-header {visibility: hidden;}
+
 </style>
 """
 st.markdown(hide_st_style, unsafe_allow_html=True)
 # MainMenu {visibility: hidden;} 
+# footer {visibility: hidden;}
+# header {visibility: hidden;}

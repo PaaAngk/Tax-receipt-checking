@@ -10,3 +10,7 @@ pyzbar
 pyzbar[scripts]
 zbar-tools
 flask
+pandas
+opencv-python-headless
+matplotlib
+seaborn

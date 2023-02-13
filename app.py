@@ -45,7 +45,7 @@ if authentication_status:
 # ------------------------- #
 
 
-# --- Functions ---
+# -------------- Functions ----------------------
 
 def set_readed_image(scanned_qr, images):
     all_readed_qr = []
@@ -129,6 +129,7 @@ if authentication_status:
 
                                 system_date = date.today().strftime("%d-%m-%Y")
                                 doc_date = doc_date.strftime("%d-%m-%Y")
+                                #Read all image in file and scanned qr on each
                                 images = rec.get_image_from_pdf(data)
                                 for pil_image in images:
                                     scanned_qr.append(rec.read_qr(pil_image["image"]))
@@ -139,7 +140,6 @@ if authentication_status:
                                 # db.insert_document(doc_type, doc_number, doc_date, system_date, name, file_name, check_status)
                             else:
                                 st.warning("Please enter all required field")
-
                         else:
                             # nn = rec.get_prediction(data)
                             # st.write(nn.crop()['im'])

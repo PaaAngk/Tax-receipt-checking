@@ -5,6 +5,8 @@ import os
 import database as db
 import qr_recognition as rec
 from datetime import date
+from multiprocessing import Pool
+from time import time
 
 
 st.set_page_config(page_title="QR Recognition", page_icon=":bar_chart:", layout="wide")
@@ -13,7 +15,6 @@ st.set_page_config(page_title="QR Recognition", page_icon=":bar_chart:", layout=
 placeholder = st.empty()
 placeholder.info("username: Ivan; password: abc123")
 # ------------------------- #
-
 
 # --- USER AUTHENTICATION ---
 users = db.fetch_all_users()
@@ -36,17 +37,13 @@ if authentication_status:
     placeholder.empty()
 # ------------------------- #
 
-
 # ---- SIDEBAR ----
 if authentication_status:
     st.sidebar.title(f"Welcome {name}")
     authenticator.logout("Logout", "sidebar")
-
 # ------------------------- #
 
-
 # -------------- Functions ----------------------
-
 def set_readed_image(scanned_qr, images):
     all_readed_qr = []
     not_readed_qr = []
@@ -93,6 +90,7 @@ def set_readed_image(scanned_qr, images):
             })
     return all_readed_qr, not_readed_qr, check_status
 
+
 def save_uploadedfile(uploadedfile, doc_type, doc_number, doc_date, system_date):
     file_name = doc_type+"__"+doc_number+"__"+doc_date+"__"+system_date+"__"+uploadedfile.name
     with open(os.path.join("tempDir",file_name),"wb") as f:
@@ -101,7 +99,6 @@ def save_uploadedfile(uploadedfile, doc_type, doc_number, doc_date, system_date)
 
 # ------------------------- #
  
-nn = None
 
 # ---- MAINPAGE ----
 if authentication_status:
@@ -110,6 +107,9 @@ if authentication_status:
     not_readed_qr = []
     all_readed_qr = []
     check_status = None
+
+    exec_time = None
+
     left_column, right_column = st.columns(2)
     with left_column:
         st.subheader("QR load:")
@@ -119,7 +119,9 @@ if authentication_status:
             doc_date = st.date_input("Document date")
             data = st.file_uploader("Upload a document", type=["pdf", "tif", "tiff"])
             submitted = st.form_submit_button("Send document")
-
+            
+            progress_text = "Operation in progress. Please wait."
+            
             if submitted:
                 if data:
                     with st.spinner("Please wait..."):
@@ -129,10 +131,28 @@ if authentication_status:
 
                                 system_date = date.today().strftime("%d-%m-%Y")
                                 doc_date = doc_date.strftime("%d-%m-%Y")
+                                
                                 #Read all image in file and scanned qr on each
-                                images = rec.get_image_from_pdf(data)
+                                try:
+                                    images = rec.get_image_from_pdf(data)
+                                except Exception:
+                                    st.error("except document reading")
+
+                                # images = [img["image"] for img in images]
+                                # with Pool(1) as p:
+                                #     scanned_qr = p.map(rec.read_qr, images)   
+
+                                start_time = time()
+
+                                progress_bar = st.progress(0)
+                                image_count = 1 / len(images)
+                                loading_bar_progress = 0
                                 for pil_image in images:
                                     scanned_qr.append(rec.read_qr(pil_image["image"]))
+                                    loading_bar_progress += image_count
+                                    progress_bar.progress(loading_bar_progress if loading_bar_progress <= 1 else 1)
+                                
+                                exec_time = time() - start_time
 
                                 all_readed_qr, not_readed_qr, check_status = set_readed_image(scanned_qr, images)
                                 
@@ -141,29 +161,29 @@ if authentication_status:
                             else:
                                 st.warning("Please enter all required field")
                         else:
-                            # nn = rec.get_prediction(data)
-                            # st.write(nn.crop()['im'])
                             scanned_qr.append(rec.run_read_image(data))
-                            
                 else:
                     st.warning("Please enter document")
-# ------------------------- #
+
+
+
+# -------------------------------------------------------------------------- #
     with right_column:
         st.subheader("QR code scanning result:")
         readed = len(all_readed_qr)-len(not_readed_qr)
         st.write("Total: " + str(readed) +  " of " + str(len(all_readed_qr)) )
+        st.write("Execution time: ",  exec_time, " seconds")
         if all_readed_qr:
             for item in all_readed_qr:
 
                 if 'data' in item:
                   st.write(item["data"])
-                st.error(item["status"])
+                if item["status"] != 1:
+                    st.error(item["status"])
                 st.image(item["readed_image"])
         if check_status:
             st.success("Проверка успешна!")
-        # if scanned_qr:
-        #     st.write(scanned_qr[0]['data'])
-        #     st.image(scanned_qr[0]['image'])
+
 
 
 # ---- HIDE STREAMLIT STYLE ----

@@ -7,13 +7,13 @@ import PyPDF2
 import PIL
 import torch
 import io
-from PIL import Image, ImageOps, ImageEnhance, ImageDraw, ImageFont
+from PIL import Image, ImageOps, ImageEnhance
 # from kraken import binarization
 #https://kdmurray.id.au/post/2022-03-21_decode-qrcodes/
 
-#TODO: add ratate with sharp
+#TODO: parce two qr from yolo in loop 
 torch.hub._validate_not_a_forked_repo=lambda a,b,c: True
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='./best_6.pt', force_reload=True)
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='./best_6.pt', force_reload=True )
 
 def decode_qr_data(texts):
   try:
@@ -49,6 +49,18 @@ def plot_qr_image(texts, img):
   except Exception:
     return dst, "can not plot qr info"
 
+#Getting only croped image from yolo
+def crop_qr(detection_qr):
+  cropped_detection_qr = [x['im'] for x in detection_qr.crop(save=False)]
+  
+  # Concate image if check exist two qr
+  if len(cropped_detection_qr)>1:
+    img = concat_image(cropped_detection_qr)
+  else:
+    img = cropped_detection_qr[0]
+
+  return img
+
 # Concate two image from qr detection else check exist two qr
 def concat_image(img):
   images = [PIL.Image.fromarray(x) for x in img]
@@ -63,38 +75,64 @@ def sharpen(image, amount=1):
 def rotate(image, rot=30):
   return image.copy().rotate(rot, expand=1)
 
+def scale_image(image, scalar=None, h=None):
+  if scalar == 1:
+    return image
+  x, y = image.size
+  if scalar is None:
+    if h is None:
+      raise ValueError("give either h or scalar")
+    scalar = 1 if h > y else h/y
+  return image.resize((int(round(x*scalar)), int(round(y*scalar))))
+
+def modify_image_read_qr(img, print_result):
+  formating_decode = None
+
+  for rotate_val in [0, 90, 45]:
+    for sharpness in [1, 1.5, 2, 3, 0.5]:
+      for scalar in [1, 2, 3, 0.7, 0.3]:
+
+        if sharpness != 1:
+          prep_image = rotate(sharpen(img, sharpness), rotate_val)
+        else:
+          prep_image = rotate(img, rotate_val)
+
+        if scalar != 1:
+            prep_image = scale_image(prep_image, scalar=scalar)
+
+        scanned_qr = pyzbar.decode(prep_image, [ZBarSymbol.QRCODE])
+        formating_decode = formating_decode_qr_result(scanned_qr, img, print_result)
+        
+        st.write("sharpe ", sharpness, ' rotate ', rotate_val, ' scale ', scalar)
+        st.image(prep_image)
+        if formating_decode["data"] is not None:
+          st.write("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+          st.image(formating_decode["image"])
+          break
+
+      if formating_decode["data"] is not None:
+        break
+    if formating_decode["data"] is not None:
+        break
+
+  return formating_decode
+
 def read_qr(img_row, print_result = True):
-  
   detection_qr = qr_nn_rec(img_row)
-  #Getting only croped image from yolo 
-  cropped_detection_qr = [x['im'] for x in detection_qr.crop()]
-  # Concate image if check exist two qr
-  if len(cropped_detection_qr)>1:
-    img = concat_image(cropped_detection_qr)
-    # st.image(img)
-  else:
-    img = cropped_detection_qr[0]
+
+  #Getting only croped image from yolo
+  img = crop_qr(detection_qr)
   
   img = Image.fromarray(img)
   st.image(img)
-  # img = img[:, :, ::-1].copy()
-  scanned_qr = pyzbar.decode(img, [ZBarSymbol.QRCODE])
-  
-  format_decode = formating_decode_qr_result(scanned_qr, img, print_result)
-  if format_decode["warn"] == "can not read":
-    for sharpness, rotate_angle in zip([0.8, 1.5, 2], [10,20,30]):
 
-      image_sharpened = rotate(sharpen(img, sharpness), 20)
-      scanned_qr = pyzbar.decode(image_sharpened, [ZBarSymbol.QRCODE])
-      format_decode = formating_decode_qr_result(scanned_qr, img, print_result)
-      
-      st.write("sharpen")
-      st.image(image_sharpened)
-      if format_decode["data"] is not None:
-        st.write("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        st.image(format_decode["image"])
-        break
-  return format_decode
+  scanned_qr = pyzbar.decode(img, [ZBarSymbol.QRCODE])
+  formating_decode = formating_decode_qr_result(scanned_qr, img, print_result)
+
+  if formating_decode["warn"] == "can not read":
+    formating_decode = modify_image_read_qr(img, print_result)
+
+  return formating_decode
 
 # Formate decoded qr data to output dict: success scan, is not check qr and is not read 
 def formating_decode_qr_result(scanned_qr, image, print_result = True):

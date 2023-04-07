@@ -151,7 +151,7 @@ if authentication_status:
                                     scanned_qr.append(rec.read_qr(pil_image["image"]))
                                     loading_bar_progress += image_count
                                     progress_bar.progress(loading_bar_progress if loading_bar_progress <= 1 else 1)
-                                
+
                                 exec_time = time() - start_time
 
                                 all_readed_qr, not_readed_qr, check_status = set_readed_image(scanned_qr, images)

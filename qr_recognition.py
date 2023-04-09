@@ -4,12 +4,10 @@ from pyzbar.pyzbar import ZBarSymbol
 import numpy as np
 import streamlit as st
 import PyPDF2
-import PIL
 import torch
 import io
-from PIL import Image, ImageOps, ImageEnhance
-# from kraken import binarization
-#https://kdmurray.id.au/post/2022-03-21_decode-qrcodes/
+from PIL import Image, ImageEnhance, ImageSequence
+from time import time
 
 #TODO: parce two qr from yolo in loop 
 torch.hub._validate_not_a_forked_repo=lambda a,b,c: True
@@ -29,7 +27,8 @@ def decode_qr_data(texts):
     return None
 
 # Print qr info on recognized qr
-def plot_qr_image(texts, img):
+def plot_qr_image(texts, PILImg):
+  img = cv2.cvtColor(np.array(PILImg), cv2.COLOR_RGB2BGR)
   try:
     (x, y, w, h) = texts.rect
     dst = img
@@ -45,28 +44,9 @@ def plot_qr_image(texts, img):
     cv2.line(dst, texts.polygon[3], texts.polygon[0], (255, 0, 0), 2)
     txt = '(' + texts.type + ')  ' + texts.data.decode('utf-8')
     cv2.putText(dst, txt, (x - 300, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 50, 255), 2)
-    return dst, None
+    return Image.fromarray(dst), None
   except Exception:
-    return dst, "can not plot qr info"
-
-#Getting only croped image from yolo
-def crop_qr(detection_qr):
-  cropped_detection_qr = [x['im'] for x in detection_qr.crop(save=False)]
-  
-  # Concate image if check exist two qr
-  if len(cropped_detection_qr)>1:
-    img = concat_image(cropped_detection_qr)
-  else:
-    img = cropped_detection_qr[0]
-
-  return img
-
-# Concate two image from qr detection else check exist two qr
-def concat_image(img):
-  images = [PIL.Image.fromarray(x) for x in img]
-  min_shape = sorted( [(np.sum(i.size), i.size ) for i in images])[-1][-1]
-  imgs_comb = np.hstack([i.resize(min_shape) for i in images])
-  return imgs_comb
+    return Image.fromarray(dst), "can not plot qr info"
 
 def sharpen(image, amount=1):
   sharpener = ImageEnhance.Sharpness(image)
@@ -85,7 +65,7 @@ def scale_image(image, scalar=None, h=None):
     scalar = 1 if h > y else h/y
   return image.resize((int(round(x*scalar)), int(round(y*scalar))))
 
-def modify_image_read_qr(img, print_result):
+def modify_image_and_read_qr(img, print_result):
   formating_decode = None
 
   for rotate_val in [0, 90, 45]:
@@ -101,6 +81,7 @@ def modify_image_read_qr(img, print_result):
             prep_image = scale_image(prep_image, scalar=scalar)
 
         scanned_qr = pyzbar.decode(prep_image, [ZBarSymbol.QRCODE])
+        st.write(scanned_qr)
         formating_decode = formating_decode_qr_result(scanned_qr, img, print_result)
         
         st.write("sharpe ", sharpness, ' rotate ', rotate_val, ' scale ', scalar)
@@ -117,22 +98,47 @@ def modify_image_read_qr(img, print_result):
 
   return formating_decode
 
-def read_qr(img_row, print_result = True):
-  detection_qr = qr_nn_rec(img_row)
+# Concate two image from qr detection else check exist two qr
+def concat_image(img):
+  images = [Image.fromarray(x) for x in img]
+  min_shape = sorted( [(np.sum(i.size), i.size ) for i in images])[-1][-1]
+  imgs_comb = np.hstack([i.resize(min_shape) for i in images])
+  return imgs_comb
 
-  #Getting only croped image from yolo
-  img = crop_qr(detection_qr)
+#Getting only croped image from yolo
+def crop_qr(detection_qr):
+  cropped_detection_qr = [x['im'] for x in detection_qr.crop(save=False)]
   
-  img = Image.fromarray(img)
-  st.image(img)
+  # Concate image if check exist two qr
+  if len(cropped_detection_qr)>1:
+    img = concat_image(cropped_detection_qr)
+  else:
+    img = cropped_detection_qr[0]
 
-  scanned_qr = pyzbar.decode(img, [ZBarSymbol.QRCODE])
-  formating_decode = formating_decode_qr_result(scanned_qr, img, print_result)
+  return img
 
-  if formating_decode["warn"] == "can not read":
-    formating_decode = modify_image_read_qr(img, print_result)
+def read_qr(img_row, print_result = True):
+  detection_qr = nn_recognition_qrs(img_row)
 
-  return formating_decode
+  #Getting array of detected QRs by NN 
+  scanned_QRs = [Image.fromarray(x['im'])for x in detection_qr.crop(save=False)]  #crop_qr(detection_qr)
+  
+  formatingReadData = []
+
+  for img in scanned_QRs:
+    st.image(img)
+
+    scanned_qr = pyzbar.decode(img, [ZBarSymbol.QRCODE])
+    st.write(scanned_qr)
+
+    formating_decode = formating_decode_qr_result(scanned_qr, img, print_result)
+
+    if formating_decode["status"] == "can not read":
+      formating_decode = modify_image_and_read_qr(img, print_result)
+    
+    formatingReadData.append(formating_decode)
+
+  return formatingReadData
 
 # Formate decoded qr data to output dict: success scan, is not check qr and is not read 
 def formating_decode_qr_result(scanned_qr, image, print_result = True):
@@ -143,31 +149,44 @@ def formating_decode_qr_result(scanned_qr, image, print_result = True):
       if qr_data:
         if print_result:
           image_with_info, warn = plot_qr_image(qrs, image)
-          readed_image["image"] = image_with_info
+          readed_image["image_with_info"] = image_with_info
+          readed_image["image"] = image
           if warn:
-            readed_image["warn"] = warn   
+            readed_image["status"] = warn   
           else:
-            readed_image["warn"] = "ok"
+            readed_image["status"] = "ok"
           readed_image["data"] = qr_data
+          readed_image["raw_data"] = qrs
+          readed_image["status"] = 1
         return readed_image
       else:
         readed_image["image"] = image
-        readed_image["warn"] = "qr is not correct"   
+        readed_image["status"] = "qr is not correct"   
         readed_image["data"] = None
     return readed_image 
   else:
     readed_image["image"] = image
-    readed_image["warn"] = "can not read"
+    readed_image["status"] = "can not read"
     readed_image["data"] = None
   return readed_image
 
 def run_read_image(img):
-  pil_image = PIL.Image.open(img)
-  nn = qr_nn_rec(pil_image)
+  pil_image = Image.open(img)
+  nn = nn_recognition_qrs(pil_image)
   return read_qr(nn.crop()[0]['im'])
 
+def nn_recognition_qrs(img):
+  start_time = time()
+  model.conf = 0.7
+  results = model(img)
+
+  st.write("NN read time: ", (time() - start_time))
+  return results
+
+# ------------------ Document proccesing ---------------------#
+
 # Return all photo from pdf document with its name
-def get_image_from_pdf(document):
+def get_images_from_pdf(document):
   pdfReader = PyPDF2.PdfReader(document)
 
   count = 0
@@ -175,19 +194,25 @@ def get_image_from_pdf(document):
   for pageObj_images_number in range(len(pdfReader.pages)):
     for image_file_object in pdfReader.pages[pageObj_images_number].images:
       images.append({
-        "image" : PIL.Image.open(io.BytesIO(image_file_object.data)),
+        "image" : Image.open(io.BytesIO(image_file_object.data)),
         "name" : image_file_object.name
       }) 
       count += 1
+  st.write(images)  
   return images
 
+def get_images_from_tif(document):
+  im = Image.open(document)
 
-def qr_nn_rec(img):
-  model.conf = 0.56
-  results = model(img)
-  return results
-
-
+  images = []
+  for image in ImageSequence.Iterator(im):
+    img = Image.fromarray(np.array(image))
+    if img.mode == 'RGBA':
+      images.append({
+        "image" : img
+      }) 
+  st.write(images)
+  return images
 
 
 

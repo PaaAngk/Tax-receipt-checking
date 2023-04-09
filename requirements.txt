@@ -10,7 +10,6 @@ pyzbar
 pyzbar[scripts]
 flask
 pandas
-opencv-python-headless
 matplotlib
 seaborn
 torch

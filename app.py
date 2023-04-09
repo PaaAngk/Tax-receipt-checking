@@ -44,15 +44,14 @@ if authentication_status:
 # ------------------------- #
 
 # -------------- Functions ----------------------
-def set_readed_image(scanned_qr, images):
+def set_readed_image(scanned_qr):
     all_readed_qr = []
     not_readed_qr = []
     check_status = 1
-    for scanned_item, image_item in zip(scanned_qr, images):
+    for scanned_item in scanned_qr:
         if scanned_item and scanned_item['data']:
             if 'fn' in scanned_item['data']:
                 all_readed_qr.append({
-                    "title" : image_item["name"],
                     "status" : 1,
                     "data": scanned_item['data'],
                     "readed_image" : scanned_item['image'],
@@ -60,15 +59,13 @@ def set_readed_image(scanned_qr, images):
             else:
                 check_status = 0
                 all_readed_qr.append({
-                    "title" : image_item["name"],
                     "status" : "qr is not correct", 
-                    "image" : image_item['image'],
+                    # "image" : scanned_item["image"],
                     "readed_image": scanned_item['image'],
                 })
 
                 not_readed_qr.append({
-                    "title" : image_item["name"],
-                    "image" : image_item['image'],
+                    # "image" : scanned_item["image"],
                     "readed_image": scanned_item['image'],
                     "status" : "qr is not correct"
                 })
@@ -76,15 +73,13 @@ def set_readed_image(scanned_qr, images):
         else:
             check_status = 0
             all_readed_qr.append({
-                "title" : image_item["name"],
                 "status" : "can not read",
-                "image" : image_item['image'],
+                # "image" : scanned_item["image"],
                 "readed_image": scanned_item['image'],
             })
 
             not_readed_qr.append({
-                "title" : image_item["name"],
-                "image" : image_item['image'],
+                # "image" : scanned_item["image"],
                 "readed_image": scanned_item['image'],
                 "status" : "can not read"
             })
@@ -96,6 +91,24 @@ def save_uploadedfile(uploadedfile, doc_type, doc_number, doc_date, system_date)
     with open(os.path.join("tempDir",file_name),"wb") as f:
          f.write(uploadedfile.getbuffer())
     return file_name
+
+def parse_enter_document(enter_file):
+    _, file_extension = enter_file.type.split('/')
+    if file_extension == "pdf":
+        try:
+            return rec.get_images_from_pdf(enter_file)
+        except Exception:
+            st.error("except document reading")
+            return
+
+    if file_extension == "tif" or file_extension == "tiff":
+        try:
+            return rec.get_images_from_tif(enter_file)
+        except Exception:
+            st.error("except document reading")
+            return
+    
+
 
 # ------------------------- #
  
@@ -112,56 +125,47 @@ if authentication_status:
 
     left_column, right_column = st.columns(2)
     with left_column:
-        st.subheader("QR load:")
+        st.subheader("Document load:")
         with st.form("doc"):
             doc_type = st.selectbox("Choose document type", ["type1", "type2"])
             doc_number = st.text_input("Document number")
             doc_date = st.date_input("Document date")
-            data = st.file_uploader("Upload a document", type=["pdf", "tif", "tiff"])
-            submitted = st.form_submit_button("Send document")
+            enter_file = st.file_uploader("Upload a document", type=["pdf", "tif", "tiff"])
+            submitted = st.form_submit_button("Procces")
             
             progress_text = "Operation in progress. Please wait."
             
             if submitted:
-                if data:
-                    with st.spinner("Please wait..."):
-                        _, file_extension = data.type.split('/')
-                        if file_extension == "pdf":
-                            if doc_type and doc_number and doc_date:
-
-                                system_date = date.today().strftime("%d-%m-%Y")
-                                doc_date = doc_date.strftime("%d-%m-%Y")
-                                
-                                #Read all image in file and scanned qr on each
-                                try:
-                                    images = rec.get_image_from_pdf(data)
-                                except Exception:
-                                    st.error("except document reading")
-
-                                # images = [img["image"] for img in images]
-                                # with Pool(1) as p:
-                                #     scanned_qr = p.map(rec.read_qr, images)   
-
+                if enter_file:
+                    if doc_type and doc_number and doc_date:
+                        with st.spinner("Please wait..."):
+                            images = parse_enter_document(enter_file)
+                            if (images):
                                 start_time = time()
-
                                 progress_bar = st.progress(0)
                                 image_count = 1 / len(images)
                                 loading_bar_progress = 0
+
+                                #Read all image in file and scanned qr on each
                                 for pil_image in images:
-                                    scanned_qr.append(rec.read_qr(pil_image["image"]))
+                                    scanned_qr.extend(rec.read_qr(pil_image["image"]))
+                                    #Progress bar
                                     loading_bar_progress += image_count
                                     progress_bar.progress(loading_bar_progress if loading_bar_progress <= 1 else 1)
-
+                                
                                 exec_time = time() - start_time
 
-                                all_readed_qr, not_readed_qr, check_status = set_readed_image(scanned_qr, images)
-                                
+                                #all_readed_qr, not_readed_qr, check_status = set_readed_image(scanned_qr)
+                                all_readed_qr = scanned_qr
+                                st.write(all_readed_qr)
+
+                                # system_date = date.today().strftime("%d-%m-%Y")
+                                # doc_date = doc_date.strftime("%d-%m-%Y")
                                 # file_name = save_uploadedfile(data, doc_type, doc_number, doc_date, system_date)
                                 # db.insert_document(doc_type, doc_number, doc_date, system_date, name, file_name, check_status)
-                            else:
-                                st.warning("Please enter all required field")
-                        else:
-                            scanned_qr.append(rec.run_read_image(data))
+                                
+                    else:
+                        st.warning("Please enter all required field")
                 else:
                     st.warning("Please enter document")
 
@@ -180,7 +184,7 @@ if authentication_status:
                   st.write(item["data"])
                 if item["status"] != 1:
                     st.error(item["status"])
-                st.image(item["readed_image"])
+                st.image(item["image"])
         if check_status:
             st.success("Проверка успешна!")
 

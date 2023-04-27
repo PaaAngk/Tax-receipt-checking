@@ -174,12 +174,11 @@ if authentication_status:
 # -------------------------------------------------------------------------- #
     with right_column:
         st.subheader("QR code scanning result:")
-        readed = len(all_readed_qr)-len(not_readed_qr)
-        st.write("Total: " + str(readed) +  " of " + str(len(all_readed_qr)) )
+        readed = [ l['status'] for l in all_readed_qr]
+        st.write("Total: " + str(readed.count(1)) +  " of " + str(len(all_readed_qr)) )
         st.write("Execution time: ",  exec_time, " seconds")
         if all_readed_qr:
             for item in all_readed_qr:
-
                 if 'data' in item:
                   st.write(item["data"])
                 if item["status"] != 1:

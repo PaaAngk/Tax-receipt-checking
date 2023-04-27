@@ -6,8 +6,9 @@ import streamlit as st
 import PyPDF2
 import torch
 import io
-from PIL import Image, ImageEnhance, ImageSequence
+from PIL import Image, ImageEnhance, ImageSequence, ImageOps
 from time import time
+import json
 
 #TODO: parce two qr from yolo in loop 
 torch.hub._validate_not_a_forked_repo=lambda a,b,c: True
@@ -64,37 +65,67 @@ def scale_image(image, scalar=None, h=None):
       raise ValueError("give either h or scalar")
     scalar = 1 if h > y else h/y
   return image.resize((int(round(x*scalar)), int(round(y*scalar))))
+  # return ImageOps.expand(image,border=int(scalar*20),fill='black')
+
+
+def find_coeffs(pa, pb):
+  matrix = []
+  for p1, p2 in zip(pa, pb):
+    matrix.append([p1[0], p1[1], 1, 0, 0, 0, -p2[0]*p1[0], -p2[0]*p1[1]])
+    matrix.append([0, 0, 0, p1[0], p1[1], 1, -p2[1]*p1[0], -p2[1]*p1[1]])
+  A = np.matrix(matrix, dtype=np.float64)
+  B = np.array(pb).reshape(8)
+  res = np.dot(np.linalg.inv(A.T * A) * A.T, B)
+  return np.array(res).reshape(8)
+
+def perspective(img, position = 'top'):
+  width, height = img.size
+  stock= [(0, 0), (width, 0), (width, height), (0, height)]
+  if position == 'top':
+    img = img.transform((width, height), Image.PERSPECTIVE, find_coeffs(stock, [(-20, -20), (width+20, -20), (width, height), (0, height)]),Image.BICUBIC)
+  if position == 'bottom':
+    img = img.transform((width, height), Image.PERSPECTIVE, find_coeffs(stock, [(0, 0), (width, 0), (width+20, height+20), (-20, height+20)]),Image.BICUBIC)
+  if position == 'left':
+    img = img.transform((width, height), Image.PERSPECTIVE, find_coeffs(stock, [(-20, -20), (width, 0), (width, height), (-20, height+20)]),Image.BICUBIC)
+  if position == 'right':
+    img = img.transform((width, height), Image.PERSPECTIVE, find_coeffs(stock, [(0, 0), (width+20, -20), (width+20, height+20), (0, height)]),Image.BICUBIC)
+  return img
 
 def modify_image_and_read_qr(img, print_result):
   formating_decode = None
 
   for rotate_val in [0, 90, 45]:
-    for sharpness in [1, 1.5, 2, 3, 0.5]:
-      for scalar in [1, 2, 3, 0.7, 0.3]:
+    for perspective_val in ['', 'top', 'bottom', 'left', 'right']:
+      for sharpness in [1, 2, 0.5]:
+        for scalar in [1, 3, 0.7]:
 
-        if sharpness != 1:
-          prep_image = rotate(sharpen(img, sharpness), rotate_val)
-        else:
-          prep_image = rotate(img, rotate_val)
+          
+          if sharpness != 1:
+            prep_image = perspective(sharpen(img, sharpness), perspective_val)
+          else:
+            prep_image = perspective(img, perspective_val)
 
-        if scalar != 1:
+          if scalar != 1:
             prep_image = scale_image(prep_image, scalar=scalar)
+          prep_image = rotate(prep_image, rotate_val)
 
-        scanned_qr = pyzbar.decode(prep_image, [ZBarSymbol.QRCODE])
-        st.write(scanned_qr)
-        formating_decode = formating_decode_qr_result(scanned_qr, img, print_result)
-        
-        st.write("sharpe ", sharpness, ' rotate ', rotate_val, ' scale ', scalar)
-        st.image(prep_image)
+          scanned_qr = pyzbar.decode(prep_image, [ZBarSymbol.QRCODE])
+          st.write(scanned_qr)
+          formating_decode = formating_decode_qr_result(scanned_qr, img, print_result)
+          
+          st.write("sharpe ", sharpness, ' perspective ', perspective_val, ' scale ', scalar, ' rotate ', rotate_val)
+          st.image(prep_image)
+          if formating_decode["data"] is not None:
+            st.write("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            st.image(formating_decode["image"])
+            break
+
         if formating_decode["data"] is not None:
-          st.write("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-          st.image(formating_decode["image"])
           break
-
       if formating_decode["data"] is not None:
         break
     if formating_decode["data"] is not None:
-        break
+      break
 
   return formating_decode
 
@@ -108,20 +139,20 @@ def concat_image(img):
 #Getting only croped image from yolo
 def crop_qr(detection_qr):
   cropped_detection_qr = [x['im'] for x in detection_qr.crop(save=False)]
-  
   # Concate image if check exist two qr
   if len(cropped_detection_qr)>1:
     img = concat_image(cropped_detection_qr)
   else:
     img = cropped_detection_qr[0]
-
   return img
+
 
 def read_qr(img_row, print_result = True):
   detection_qr = nn_recognition_qrs(img_row)
+  # st.write(detection_qr.pandas().xyxy[0].iloc[1])
 
   #Getting array of detected QRs by NN 
-  scanned_QRs = [Image.fromarray(x['im'])for x in detection_qr.crop(save=False)]  #crop_qr(detection_qr)
+  scanned_QRs = [ImageOps.grayscale(Image.fromarray(x['im']))for x in detection_qr.crop(save=False)]
   
   formatingReadData = []
 
@@ -129,7 +160,7 @@ def read_qr(img_row, print_result = True):
     st.image(img)
 
     scanned_qr = pyzbar.decode(img, [ZBarSymbol.QRCODE])
-    st.write(scanned_qr)
+    # st.write(scanned_qr)
 
     formating_decode = formating_decode_qr_result(scanned_qr, img, print_result)
 

@@ -96,8 +96,8 @@ def set_readed_image(scanned_qr):
 
 def save_uploadedfile(uploadedfile, doc_type, doc_number, doc_date, system_date):
     file_name = doc_type+"__"+doc_number+"__"+doc_date+"__"+system_date+"__"+uploadedfile.name
-    #with open(os.path.join("tempDir",file_name),"wb") as f:
-    #     f.write(uploadedfile.getbuffer())
+    with open(os.path.join("tempDir",file_name),"wb") as f:
+        f.write(uploadedfile.getbuffer())
     return file_name
 
 def parse_enter_document(enter_file):

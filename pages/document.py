@@ -7,7 +7,7 @@ import os
 st.title("Поиск документов")
 doc_type = st.selectbox("Выберите тип документа", ["Авансовый отчёт", "type2"])
 doc_number = st.text_input("Номер документа")
-first_date = st.date_input("С")
+doc_date = st.date_input("Дата")
 second_date = st.date_input("По")
 submitted = st.button("Поиск")
 result_items = []

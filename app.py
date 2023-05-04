@@ -50,6 +50,7 @@ if authentication_status:
     authenticator.logout("Выйти", "sidebar")
 # ------------------------- #
 
+
 # -------------- Functions ----------------------
 def set_readed_image(scanned_qr):
     all_readed_qr = []
@@ -95,8 +96,8 @@ def set_readed_image(scanned_qr):
 
 def save_uploadedfile(uploadedfile, doc_type, doc_number, doc_date, system_date):
     file_name = doc_type+"__"+doc_number+"__"+doc_date+"__"+system_date+"__"+uploadedfile.name
-    with open(os.path.join("tempDir",file_name),"wb") as f:
-         f.write(uploadedfile.getbuffer())
+    #with open(os.path.join("tempDir",file_name),"wb") as f:
+    #     f.write(uploadedfile.getbuffer())
     return file_name
 
 def parse_enter_document(enter_file):
@@ -115,9 +116,8 @@ def parse_enter_document(enter_file):
             st.error("except document reading")
             return
     
+    
 
-
-# ------------------------- #
  
 
 # ---- MAINPAGE ----
@@ -145,28 +145,37 @@ if authentication_status:
             if submitted:
                 if enter_file:
                     if doc_type and doc_number and doc_date:
-                        with st.spinner("Пожалуйста, подождите..."):
-                            images = parse_enter_document(enter_file)
-                            if (images):
-                                start_time = time()
-                                progress_bar = st.progress(0)
-                                image_count = 1 / len(images)
-                                loading_bar_progress = 0
+                        if doc_type=="Авансовый отчёт":
+                            with st.spinner("Пожалуйста, подождите..."):
+                                images = parse_enter_document(enter_file)
+                                if (images):
+                                    start_time = time()
+                                    progress_bar = st.progress(0)
+                                    image_count = 1 / len(images)
+                                    loading_bar_progress = 0
 
-                                #Read all image in file and scanned qr on each
-                                for pil_image in images:
-                                    scanned_qr.extend(rec.read_qr(pil_image["image"]))
-                                    #Progress bar
-                                    loading_bar_progress += image_count
-                                    progress_bar.progress(loading_bar_progress if loading_bar_progress <= 1 else 1)
-                                
-                                exec_time = time() - start_time
+                                    #Read all image in file and scanned qr on each
+                                    for pil_image in images:
+                                        scanned_qr.extend(rec.read_qr(pil_image["image"]))
+                                            #Progress bar
+                                        loading_bar_progress += image_count
+                                        progress_bar.progress(loading_bar_progress if loading_bar_progress <= 1 else 1)
+                                        
+                                    exec_time = time() - start_time
 
-                                #all_readed_qr, not_readed_qr, check_status = set_readed_image(scanned_qr)
-                                all_readed_qr = scanned_qr
-                                st.write(all_readed_qr)
+                                    #all_readed_qr, not_readed_qr, check_status = set_readed_image(scanned_qr)
+                                    all_readed_qr = scanned_qr
+                                    st.write(all_readed_qr)
 
-                               
+                                    system_date = date.today().strftime("%d-%m-%Y")
+                                    doc_date = doc_date.strftime("%d-%m-%Y")
+                                    file_name = save_uploadedfile(enter_file, doc_type, doc_number, doc_date, system_date)
+                                    db.insert_document(doc_type, doc_number, doc_date, system_date, name, file_name, check_status) 
+                        else: 
+                            system_date = date.today().strftime("%d-%m-%Y")
+                            doc_date = doc_date.strftime("%d-%m-%Y")
+                            file_name = save_uploadedfile(enter_file, doc_type, doc_number, doc_date, system_date)
+                            db.insert_document(doc_type, doc_number, doc_date, system_date, name, file_name, check_status)                     
                     else:
                         st.warning("Пожалуйста, заполните все поля")
                 else:

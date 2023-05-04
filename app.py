@@ -9,7 +9,7 @@ from multiprocessing import Pool
 from time import time
 
 
-st.set_page_config(page_title="QR Recognition", page_icon=":bar_chart:", layout="wide")
+st.set_page_config(page_title="Электронный архив", page_icon=":bar_chart:", layout="wide")
 
 # --- DEMO PURPOSE ONLY --- #
 placeholder = st.empty()
@@ -28,10 +28,10 @@ authenticator = stauth.Authenticate(names, usernames, hashed_passwords, "qr_read
 name, authentication_status, username = authenticator.login("Login", "main")
 
 if authentication_status == False:
-    st.error("Username/password is incorrect")
+    st.error("Логин/пароль неверный")
 
 if authentication_status == None:
-    st.warning("Please enter your username and password")
+    st.warning("Пожалуйста, введите имя пользователя и пароль")
 
 if authentication_status:
     placeholder.empty()
@@ -39,8 +39,8 @@ if authentication_status:
 
 # ---- SIDEBAR ----
 if authentication_status:
-    st.sidebar.title(f"Welcome {name}")
-    authenticator.logout("Logout", "sidebar")
+    st.sidebar.title(f"Добро пожаловать, {name}")
+    authenticator.logout("Выйти", "sidebar")
 # ------------------------- #
 
 # -------------- Functions ----------------------
@@ -115,7 +115,7 @@ def parse_enter_document(enter_file):
 
 # ---- MAINPAGE ----
 if authentication_status:
-    st.title("Read QR")
+    st.title("Сохранение документа")
     scanned_qr = []
     not_readed_qr = []
     all_readed_qr = []
@@ -125,20 +125,20 @@ if authentication_status:
 
     left_column, right_column = st.columns(2)
     with left_column:
-        st.subheader("Document load:")
+        st.subheader("Загрузка документа:")
         with st.form("doc"):
-            doc_type = st.selectbox("Choose document type", ["type1", "type2"])
-            doc_number = st.text_input("Document number")
-            doc_date = st.date_input("Document date")
-            enter_file = st.file_uploader("Upload a document", type=["pdf", "tif", "tiff"])
-            submitted = st.form_submit_button("Procces")
+            doc_type = st.selectbox("Выберите тип документа", ["Авансовый отчёт", "type2"])
+            doc_number = st.text_input("Номер документа")
+            doc_date = st.date_input("Дата")
+            enter_file = st.file_uploader("Загрузить документ", type=["pdf", "tif", "tiff"])
+            submitted = st.form_submit_button("Сохранить")
             
-            progress_text = "Operation in progress. Please wait."
+            progress_text = "Операция выполняется. Пожалуйста, подождите"
             
             if submitted:
                 if enter_file:
                     if doc_type and doc_number and doc_date:
-                        with st.spinner("Please wait..."):
+                        with st.spinner("Пожалуйста, подождите..."):
                             images = parse_enter_document(enter_file)
                             if (images):
                                 start_time = time()
@@ -159,24 +159,20 @@ if authentication_status:
                                 all_readed_qr = scanned_qr
                                 st.write(all_readed_qr)
 
-                                # system_date = date.today().strftime("%d-%m-%Y")
-                                # doc_date = doc_date.strftime("%d-%m-%Y")
-                                # file_name = save_uploadedfile(data, doc_type, doc_number, doc_date, system_date)
-                                # db.insert_document(doc_type, doc_number, doc_date, system_date, name, file_name, check_status)
-                                
+                               
                     else:
-                        st.warning("Please enter all required field")
+                        st.warning("Пожалуйста, заполните все поля")
                 else:
-                    st.warning("Please enter document")
+                    st.warning("Пожалуйста, прикрепите документ")
 
 
 
 # -------------------------------------------------------------------------- #
     with right_column:
-        st.subheader("QR code scanning result:")
+        st.subheader("Результат сканирования:")
         readed = [ l['status'] for l in all_readed_qr]
-        st.write("Total: " + str(readed.count(1)) +  " of " + str(len(all_readed_qr)) )
-        st.write("Execution time: ",  exec_time, " seconds")
+        st.write("Всего: " + str(readed.count(1)) +  " из " + str(len(all_readed_qr)) )
+        st.write("Время обработки: ",  exec_time, " секунд")
         if all_readed_qr:
             for item in all_readed_qr:
                 if 'data' in item:
@@ -189,12 +185,4 @@ if authentication_status:
 
 
 
-# ---- HIDE STREAMLIT STYLE ----
-# hide_st_style = """
-# <style>
-# MainMenu {visibility: hidden;} 
-# footer {visibility: hidden;}
-# header {visibility: hidden;}
-# </style>
-# """
-# st.markdown(hide_st_style, unsafe_allow_html=True)
+

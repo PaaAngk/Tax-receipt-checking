@@ -4,11 +4,12 @@ import pandas as pd
 import os
 
 
-st.title("Document")
-doc_type = st.selectbox("Choose document type", ["type1", "type2"])
-doc_number = st.text_input("Document number")
-doc_date = st.date_input("Document date")
-submitted = st.button("search document")
+st.title("Поиск документов")
+doc_type = st.selectbox("Выберите тип документа", ["Авансовый отчёт", "type2"])
+doc_number = st.text_input("Номер документа")
+first_date = st.date_input("С")
+second_date = st.date_input("По")
+submitted = st.button("Поиск")
 result_items = []
 if submitted:
     result = db.get_document_search( str(doc_number), str(doc_type), str(doc_date.strftime("%d-%m-%Y")))
@@ -24,9 +25,9 @@ if submitted:
         st.dataframe(df_result)
         file_name = os.getcwd() + '/tempDir/'+result_items[5]
         with open(file_name, 'rb') as f:
-            st.download_button('Download file', f, file_name='doc.pdf')
+            st.download_button('Скачать документ', f, file_name='doc.pdf')
     else:
-        st.warning("Documents is not found")
+        st.warning("Документы не найдены")
     
 
 

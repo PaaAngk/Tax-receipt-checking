@@ -37,7 +37,7 @@ if authentication_status:
     placeholder.empty()
 # ------------------------- #
 
-# ---- SIDEBAR ----
+# ------------- SIDEBAR ------------ #
 if authentication_status:
     st.sidebar.title(f"Добро пожаловать, {name}")
     authenticator.logout("Выйти", "sidebar")
@@ -130,7 +130,7 @@ if authentication_status:
             doc_type = st.selectbox("Выберите тип документа", ["Авансовый отчёт", "type2"])
             doc_number = st.text_input("Номер документа")
             doc_date = st.date_input("Дата")
-            enter_file = st.file_uploader("Загрузить документ", type=["pdf", "tif", "tiff"])
+            enter_file = st.file_uploader("Загрузить документ", type=["pdf", "tif", "tiff"], )
             submitted = st.form_submit_button("Сохранить")
             
             progress_text = "Операция выполняется. Пожалуйста, подождите"

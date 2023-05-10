@@ -73,6 +73,7 @@ def download_df(path_name):
 
 # ------------------------  Tabs  ------------------------ #
 st.title("Поиск документов")
+
 numberFind, dateRange = st.tabs(["По номеру", "По дате"])
 with numberFind:
     doc_number_input = st.text_input("Номер документа")

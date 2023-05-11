@@ -112,6 +112,8 @@ with dateRange:
             
         result = search_by_date_range(doc_type_input, first_date_input, second_date_input)
 
+def check_null(item):
+    return item if item != None else 'Нет данных'
 
 # ------------------------  Table  ------------------------ #
 if result:
@@ -134,20 +136,10 @@ if result:
         with col5:
             col5.write(item['doc_type'])
         with col6:
-            col6.write(item['status'] if item['status'] != None else 'Нет данных')
-        with col7:
-            #(st.button("Download",key=index, on_click=download_file(item['file_name'])))
-            print("111")
-            
+            col6.write( "Проверен" if check_null(item['status']) == 1 else "Не проверен" )
+        with col7:            
             download_file(item['file_name'], index+1)
-            
-                 
-            
-
-            
-                        
-                  
-                
+           
             
 if result and len(result) == 0:
     st.warning("Документы не найдены")

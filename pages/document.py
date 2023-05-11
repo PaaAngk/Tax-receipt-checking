@@ -21,12 +21,25 @@ def search_by_date_range( doc_type, first_date, second_date):
         str(timestap_from_date(second_date)) 
     )
 
+    
 def download_file(path_name, cnt):
     try:
         file_path = os.getcwd() + '/tempDir/'+path_name
         file_name = path_name.split('__')[-1]
         with open(file_path, 'rb') as f:
-            return st.download_button('Скачать документ', f, file_name=file_name, key=cnt)
+            btn = st.download_button('Скачать документ', f, file_name=file_name, key=cnt)
+            btn
+            if btn:
+                js_code = """
+                <script>
+                document.querySelector('.stButton button').addEventListener('click', function(e) {
+                e.preventDefault();
+                });
+                </script>
+                """
+                st.markdown(js_code, unsafe_allow_html=True)
+                print("nothing")
+            
     except FileNotFoundError:
         st.error('Невозможно найти файл')
 
@@ -126,8 +139,7 @@ if result:
             col6.write( "Проверен" if check_null(item['status']) == 1 else "Не проверен" )
         with col7:            
             download_file(item['file_name'], index+1)
-
-                            
+           
             
 if result and len(result) == 0:
     st.warning("Документы не найдены")

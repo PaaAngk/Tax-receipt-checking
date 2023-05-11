@@ -99,6 +99,8 @@ with dateRange:
             
         result = search_by_date_range(doc_type_input, first_date_input, second_date_input)
 
+def check_null(item):
+    return item if item != None else 'Нет данных'
 
 # ------------------------  Table  ------------------------ #
 if result:
@@ -110,7 +112,6 @@ if result:
 
     for index, item in enumerate(result):
         col1, col2, col3, col4, col5, col6, col7 = st.columns(col_size)
-        cnt=7
         with col1:
             st.write(index+1)
         with col2:
@@ -122,25 +123,11 @@ if result:
         with col5:
             col5.write(item['doc_type'])
         with col6:
-            col6.write(item['status'] if item['status'] != None else 'Нет данных')
-        with col7:
-            #(st.button("Download",key=index, on_click=download_file(item['file_name'])))
-            print("111")
-            
+            col6.write( "Проверен" if check_null(item['status']) == 1 else "Не проверен" )
+        with col7:            
             download_file(item['file_name'], index+1)
-            #download_file(item['file_name'])
-            #with st.form(key="down_form"):
-            #files = st.file_uploader("Files", accept_multiple_files=True)
-                #submit_button = st.form_submit_button(label="Submit choice")
 
-                #if submit_button:
-                   # download_file(item['file_name'])
-               #else:
-                #    st.markdown("You did not click on submit button.")
-            
-            
-        cnt =cnt+1    
-                
+                            
             
 if result and len(result) == 0:
     st.warning("Документы не найдены")

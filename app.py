@@ -15,6 +15,7 @@ st.set_page_config(page_title="Электронный архив", page_icon=":b
 show_pages([
     Page("app.py", "Сохранить документ", ":notebook:"),
     Page("pages\document.py", "Найти документ", ":blue_book:"),
+    Page("pages\not_read.py", "Проверить вручную", ":books:")
     
 ])
 

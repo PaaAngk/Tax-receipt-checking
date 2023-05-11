@@ -64,6 +64,11 @@ def get_document_search_by_number(doc_number):
     first_fetch_res = db_doc.fetch([{"doc_number": doc_number}])
     return first_fetch_res.items
 
+# Find documents by Document status
+def get_avanc_report_by_status(status):
+    first_fetch_res = db_doc.fetch([{"status": status, "doc_type": "Авансовый отчёт"} ])
+    return first_fetch_res.items
+
 # Find documents by needed document type and in range of date
 def get_document_search_by_dateRange(doc_type, first_date, second_date):
     query = { "doc_date?gte": first_date, 

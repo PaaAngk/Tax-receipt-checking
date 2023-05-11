@@ -12,7 +12,7 @@ def timestap_from_date(date):
     return time.mktime(date.timetuple())
 
 def search_by_number(doc_number):
-    return db.get_document_search_by_number( str(doc_number))
+    return db.get_document_search_by_number(str(doc_number))
 
 def search_by_date_range( doc_type, first_date, second_date):
     return db.get_document_search_by_dateRange( 
@@ -21,12 +21,12 @@ def search_by_date_range( doc_type, first_date, second_date):
         str(timestap_from_date(second_date)) 
     )
 
-def download_file(path_name):
+def download_file(path_name, cnt):
     try:
         file_path = os.getcwd() + '/tempDir/'+path_name
         file_name = path_name.split('__')[-1]
         with open(file_path, 'rb') as f:
-            return st.download_button('Скачать документ', f, file_name=file_name)
+            return st.download_button('Скачать документ', f, file_name=file_name, key=cnt)
     except FileNotFoundError:
         st.error('Невозможно найти файл')
 
@@ -47,29 +47,35 @@ def download_button(object_to_download, download_filename):
 
     except AttributeError as e:
         b64 = base64.b64encode(object_to_download).decode()
-
+   
     dl_link = f"""
     <html>
     <head>
     <title>Start Auto Download file</title>
     <script src="http://code.jquery.com/jquery-3.2.1.min.js"></script>
     <script>
-        $('<a href="data:text/csv;base64,{b64}" download="{download_filename}">')[0].click()
+       
+        var a = document.createElement("a"); 
+        a.href = "data:application/pdf;base64,{b64}"; 
+        a.download = "{download_filename}";
+        a.click(); //Downloaded file
     </script>
     </head>
     </html>
     """
     return dl_link
 
+#$('<a href="data:application/pdf;base64,{b64}" download="{download_filename}">')[0].click()
+
 
 def download_df(path_name):
     file_path = os.getcwd() + '/tempDir/'+path_name
     file_name = path_name.split('__')[-1]
     components.html(
-        download_button(file_path, file_name),
+       download_button(file_path, file_name),
         height=0,
     )
-
+    
 
 # ------------------------  Tabs  ------------------------ #
 st.title("Поиск документов")
@@ -98,12 +104,13 @@ with dateRange:
 if result:
     col_size =(1, 1, 1, 1, 1, 1, 1)
     colms = st.columns(col_size)
-    fields = ["№", 'Creater', 'Document date', 'Document number', "Type", "Status"]
+    fields = ["№", 'Создал', 'Дата', 'Номер документа', "Тип", "Статус"]
     for col, field_name in zip(colms, fields):
         col.write(field_name)
 
     for index, item in enumerate(result):
         col1, col2, col3, col4, col5, col6, col7 = st.columns(col_size)
+        cnt=7
         with col1:
             st.write(index+1)
         with col2:
@@ -117,15 +124,24 @@ if result:
         with col6:
             col6.write(item['status'] if item['status'] != None else 'Нет данных')
         with col7:
-            # button_phold = col7.empty()  
-            # do_action = button_phold.button("Download", key=index)
-            (st.button("Download",key=index))
-        # if do_action:
-        #     print("111") 
-            # button_phold.empty() 
-            # download_df(item['file_name'])
+            #(st.button("Download",key=index, on_click=download_file(item['file_name'])))
+            print("111")
+            
+            download_file(item['file_name'], index+1)
+            #download_file(item['file_name'])
+            #with st.form(key="down_form"):
+            #files = st.file_uploader("Files", accept_multiple_files=True)
+                #submit_button = st.form_submit_button(label="Submit choice")
 
-
+                #if submit_button:
+                   # download_file(item['file_name'])
+               #else:
+                #    st.markdown("You did not click on submit button.")
+            
+            
+        cnt =cnt+1    
+                
+            
 if result and len(result) == 0:
     st.warning("Документы не найдены")
     

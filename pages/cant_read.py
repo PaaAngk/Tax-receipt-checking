@@ -9,7 +9,7 @@ def timestap_from_date(date):
 
 def get_avanc_report_by_status(status):
     print(status)
-    return db.get_avanc_report_by_status(str(status))
+    return db.get_avanc_report_by_status((status))
 
 
 st.title("Неподтверждённые авансовые отчёты")

@@ -21,12 +21,25 @@ def search_by_date_range( doc_type, first_date, second_date):
         str(timestap_from_date(second_date)) 
     )
 
+    
 def download_file(path_name, cnt):
     try:
         file_path = os.getcwd() + '/tempDir/'+path_name
         file_name = path_name.split('__')[-1]
         with open(file_path, 'rb') as f:
-            return st.download_button('Скачать документ', f, file_name=file_name, key=cnt)
+            btn = st.download_button('Скачать документ', f, file_name=file_name, key=cnt)
+            btn
+            if btn:
+                js_code = """
+                <script>
+                document.querySelector('.stButton button').addEventListener('click', function(e) {
+                e.preventDefault();
+                });
+                </script>
+                """
+                st.markdown(js_code, unsafe_allow_html=True)
+                print("nothing")
+            
     except FileNotFoundError:
         st.error('Невозможно найти файл')
 
@@ -110,7 +123,6 @@ if result:
 
     for index, item in enumerate(result):
         col1, col2, col3, col4, col5, col6, col7 = st.columns(col_size)
-        cnt=7
         with col1:
             st.write(index+1)
         with col2:
@@ -128,18 +140,13 @@ if result:
             print("111")
             
             download_file(item['file_name'], index+1)
-            #download_file(item['file_name'])
-            #with st.form(key="down_form"):
-            #files = st.file_uploader("Files", accept_multiple_files=True)
-                #submit_button = st.form_submit_button(label="Submit choice")
+            
+                 
+            
 
-                #if submit_button:
-                   # download_file(item['file_name'])
-               #else:
-                #    st.markdown("You did not click on submit button.")
             
-            
-        cnt =cnt+1    
+                        
+                  
                 
             
 if result and len(result) == 0:

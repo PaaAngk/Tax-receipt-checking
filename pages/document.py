@@ -84,7 +84,7 @@ if result:
                     
                 components.html(f"""
                             <html>
-                                <button id="elem" style="background-color: transparent; border: none; color: white; "> Просмотреть документ </button>
+                                <button id="elem" style="background-color: transparent; border: none; color: white; text-decoration: underline;"> Просмотреть документ </button>
                                 <script> 
                                     function display() {{
                                         console.log("j");

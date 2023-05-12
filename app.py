@@ -87,7 +87,7 @@ def set_readed_image(scanned_qr):
     not_readed_qr = []
     check_status = 1
     for scanned_item in scanned_qr:
-        if scanned_item and scanned_item['data']:
+        if scanned_item['result'] and scanned_item['data']:
             if 'fn' in scanned_item['data']:
                 all_readed_qr.append({
                     "status" : 1,
@@ -150,7 +150,6 @@ def parse_enter_document(enter_file):
 # ---- MAINPAGE ----
 if authentication_status:
     st.title("Сохранение документа")
-    scanned_qr = []
     not_readed_qr = []
     all_readed_qr = []
     check_status = None
@@ -171,17 +170,20 @@ if authentication_status:
             
             if submitted:
                 if enter_file:
+                    scanned_qr = []
                     if doc_type and doc_number and doc_date:
                         doc_date_to_save = time.mktime(doc_date.timetuple())
                         system_date = date.today().strftime("%d-%m-%Y")
-
                         if doc_type=="Авансовый отчёт":
                             with st.spinner("Пожалуйста, подождите..."):
                                 images = parse_enter_document(enter_file)
                                 if (images):
                                     #Read all image in file and scanned qr on each
                                     for pil_image in images:
-                                        scanned_qr.extend(rec.read_qr(pil_image["image"]))
+                                        scanned_qr.extend({
+                                            "page":pil_image["page"],
+                                            "result": rec.read_qr(pil_image["image"])
+                                        })
 
                                     all_readed_qr, not_readed_qr, check_status = set_readed_image(scanned_qr)
 

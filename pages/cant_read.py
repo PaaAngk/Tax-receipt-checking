@@ -2,6 +2,9 @@ import streamlit as st
 from datetime import date
 import time
 import database as db
+import os
+import streamlit.components.v1 as components
+import base64
 
 result = None
 def timestap_from_date(date):
@@ -41,7 +44,48 @@ if result:
         with col6:
             col6.write(item['status'] if item['status'] != None else 'Нет данных')
         with col7:
-           print("1")
+           file_path = os.getcwd() + '/tempDir/'+item['file_name']
+           with open(file_path, "rb") as file:
+                base64_pdf = base64.b64encode(file.read()).decode("utf-8")
+                    
+                components.html(f"""
+                            <html>
+                                <button id="elem" style="background-color: transparent; border: none; color: white; "> Просмотреть документ </button>
+                                <script> 
+                                    function display() {{
+                                        console.log("j");
+                                        var byteArray = new Uint8Array(atob("{base64_pdf}").split('').map(function(char) {{
+                                            return char.charCodeAt(0);
+                                        }}));
+                                        var file = new Blob([byteArray], {{ type: 'application/pdf' }});
+                                        var fileURL = URL.createObjectURL(file);
+                                        window.open(fileURL);
+                                    }};
+                                    window.onload = function() {{
+                                        document.getElementById("elem").onclick = display;
+                                    }};
+                                </script>
+                            </html>
+                        """) 
+                file.close() 
+
+        col_size_pg=(1,2,2)
+        colms_pg = st.columns(col_size_pg)
+        fields_pg = ["№", 'Страница']
+        for col, field_name in zip(colms_pg, fields_pg):
+            col.write(field_name)
+        kol_pages=[]
+        for page in kol_pages:
+            col1_pg, col2_pg, col3_pg = st.columns(col_size_pg)
+            with col1_pg:
+                st.write(index+1)
+            with col2_pg:#здесь ссылка на просмотре страницы с чеком
+                print()
+            with col3_pg:#здесь кнопка на подтверждание
+                print()
+
+
+        
                 
             
 if result and len(result) == 0:

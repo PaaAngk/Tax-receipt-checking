@@ -21,74 +21,6 @@ def search_by_date_range( doc_type, first_date, second_date):
         str(timestap_from_date(second_date)) 
     )
 
-    
-def download_file(path_name, cnt):
-    try:
-        file_path = os.getcwd() + '/tempDir/'+path_name
-        file_name = path_name.split('__')[-1]
-        with open(file_path, 'rb') as f:
-            btn = st.download_button('Скачать документ', f, file_name=file_name, key=cnt)
-            btn
-            if btn:
-                js_code = """
-                <script>
-                document.querySelector('.stButton button').addEventListener('click', function(e) {
-                e.preventDefault();
-                });
-                </script>
-                """
-                st.markdown(js_code, unsafe_allow_html=True)
-                print("nothing")
-            
-    except FileNotFoundError:
-        st.error('Невозможно найти файл')
-
-def download_button(object_to_download, download_filename):
-    """
-    Generates a link to download the given object_to_download.
-    Params:
-    ------
-    object_to_download:  The object to be downloaded.
-    download_filename (str): filename and extension of file. e.g. mydata.csv,
-    Returns:
-    -------
-    (str): the anchor tag to download object_to_download
-    """
-    try:
-        # some strings <-> bytes conversions necessary here
-        b64 = base64.b64encode(object_to_download.encode()).decode()
-
-    except AttributeError as e:
-        b64 = base64.b64encode(object_to_download).decode()
-   
-    dl_link = f"""
-    <html>
-    <head>
-    <title>Start Auto Download file</title>
-    <script src="http://code.jquery.com/jquery-3.2.1.min.js"></script>
-    <script>
-       
-        var a = document.createElement("a"); 
-        a.href = "data:application/pdf;base64,{b64}"; 
-        a.download = "{download_filename}";
-        a.click(); //Downloaded file
-    </script>
-    </head>
-    </html>
-    """
-    return dl_link
-
-#$('<a href="data:application/pdf;base64,{b64}" download="{download_filename}">')[0].click()
-
-
-def download_df(path_name):
-    file_path = os.getcwd() + '/tempDir/'+path_name
-    file_name = path_name.split('__')[-1]
-    components.html(
-       download_button(file_path, file_name),
-        height=0,
-    )
-    
 
 # ------------------------  Tabs  ------------------------ #
 st.title("Поиск документов")
@@ -138,8 +70,26 @@ if result:
         with col6:
             col6.write( "Проверен" if check_null(item['status']) == 1 else "Не проверен" )
         with col7:            
-            download_file(item['file_name'], index+1)
-           
+            file_path = os.getcwd() + '/tempDir/'+item['file_name']
+            file_name = item['file_name'].split('__')[-1]
+            with open(file_path, "rb") as file:
+                        base64_pdf = base64.b64encode(file.read()).decode("utf-8")
+                        file.close()
+            href = f'<a href="data:application/pdf;base64,{base64_pdf}" download="документ.pdf">Скачать PDF файл</a>'
+            js_code = """
+                <script>
+                document.querySelector('.stButton button').addEventListener('click', function(e) {
+                e.preventDefault();
+                });
+                </script>
+                """
+            print("nothing")
+            st.markdown(href, unsafe_allow_html=True)
+            st.markdown(js_code, unsafe_allow_html=True)
+                
+               
+
+
             
 if result and len(result) == 0:
     st.warning("Документы не найдены")

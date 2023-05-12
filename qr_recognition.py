@@ -241,7 +241,8 @@ def get_images_from_pdf(document):
     for image_file_object in pdfReader.pages[pageObj_images_number].images:
       images.append({
         "image" : Image.open(io.BytesIO(image_file_object.data)),
-        "name" : image_file_object.name
+        "name" : image_file_object.name,
+        "page": pageObj_images_number
       }) 
       count += 1
   st.write(images)  

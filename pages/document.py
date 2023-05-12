@@ -38,7 +38,6 @@ def download_file(path_name, cnt):
                 </script>
                 """
                 st.markdown(js_code, unsafe_allow_html=True)
-                print("nothing")
             
     except FileNotFoundError:
         st.error('Невозможно найти файл')

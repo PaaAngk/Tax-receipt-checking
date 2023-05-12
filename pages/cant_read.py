@@ -8,7 +8,6 @@ def timestap_from_date(date):
     return time.mktime(date.timetuple())
 
 def get_avanc_report_by_status(status):
-    print(status)
     return db.get_avanc_report_by_status((status))
 
 

@@ -86,6 +86,7 @@ def set_readed_image(scanned_qr):
     all_readed_qr = []
     not_readed_qr = []
     check_status = 1
+    st.write(scanned_qr)
     for scanned_item in scanned_qr:
         if scanned_item and scanned_item['data']:
             if 'fn' in scanned_item['data']:
@@ -105,21 +106,23 @@ def set_readed_image(scanned_qr):
                 not_readed_qr.append({
                     # "image" : scanned_item["image"],
                     "readed_image": scanned_item['image'],
-                    "status" : "qr is not correct"
+                    "status" : "qr is not correct",
+                    "page" : scanned_item['page'],
+                    "coords" : scanned_item['coords'],
                 })
                 
         else:
             check_status = 0
             all_readed_qr.append({
                 "status" : "can not read",
-                # "image" : scanned_item["image"],
                 "readed_image": scanned_item['image'],
             })
 
             not_readed_qr.append({
-                # "image" : scanned_item["image"],
                 "readed_image": scanned_item['image'],
-                "status" : "can not read"
+                "status" : "can not read",
+                "page" : scanned_item['page'],
+                "coords" : scanned_item['coords'],
             })
     return all_readed_qr, not_readed_qr, check_status
 
@@ -177,19 +180,23 @@ if authentication_status:
 
                         if doc_type=="Авансовый отчёт":
                             with st.spinner("Пожалуйста, подождите..."):
-                                images = parse_enter_document(enter_file)
-                                if (images):
+                                parsed_pages = parse_enter_document(enter_file)
+                                if (parsed_pages):
                                     #Read all image in file and scanned qr on each
-                                    for pil_image in images:
-                                        scanned_qr.extend(rec.read_qr(pil_image["image"]))
+                                    for page in parsed_pages:
+                                        scanned_qr.extend(rec.read_qr(page))
 
                                     all_readed_qr, not_readed_qr, check_status = set_readed_image(scanned_qr)
+                                    not_readet_data = [{
+                                                        "page" : qr['page'],
+                                                        "coords" : qr['coords'],
+                                                    } for qr in not_readed_qr ] if len(not_readed_qr) > 0 else None
 
-                                    # file_name = save_uploadedfile(enter_file, doc_type, doc_number, doc_date.strftime("%d-%m-%Y"), system_date)
-                                    # db.insert_document(doc_type, doc_number, doc_date_to_save, system_date, name, file_name, check_status) 
+                                    file_name = save_uploadedfile(enter_file, doc_type, doc_number, doc_date.strftime("%d-%m-%Y"), system_date)
+                                    db.insert_document(doc_type, doc_number, doc_date_to_save, system_date, name, file_name, check_status, not_readet_data) 
                         else: 
                             file_name = save_uploadedfile(enter_file, doc_type, doc_number, doc_date.strftime("%d-%m-%Y"), system_date)
-                            db.insert_document(doc_type, doc_number, doc_date_to_save, system_date, name, file_name)                     
+                            db.insert_document(doc_type, doc_number, doc_date_to_save, system_date, name, file_name, None)                     
                     else:
                         st.warning("Пожалуйста, заполните все поля")
                 else:

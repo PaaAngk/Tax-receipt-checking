@@ -8,6 +8,7 @@ import torch
 import io
 from PIL import Image, ImageEnhance, ImageSequence, ImageOps
 from time import time
+import json
 
 #TODO: parce two qr from yolo in loop 
 torch.hub._validate_not_a_forked_repo=lambda a,b,c: True
@@ -158,18 +159,18 @@ def crop_qr(detection_qr):
 def read_by_openCV(img, print_result):
   res, _ = detector.detectAndDecode(cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR))
   st.write(res)
-  return formating_decode_qr_result([res[0]] if res else None, img, print_result)
+  return res
 
-def read_qr(img_row, print_result = True):
-  detection_qr = nn_recognition_qrs(img_row)
-  # st.write(detection_qr.pandas().xyxy[0].iloc[1])
+def read_qr(page, print_result = True):
+  detection_qr = nn_recognition_qrs(page["image"])
+  qr_coords  = json.loads(detection_qr.pandas().xyxy[0].to_json(orient="records"))
 
   #Getting array of detected QRs by NN 
   scanned_QRs = [ImageOps.grayscale(Image.fromarray(x['im']))for x in detection_qr.crop(save=False)]
   
   formatingReadData = []
 
-  for img in scanned_QRs:
+  for img, coords in zip(scanned_QRs, qr_coords):
     st.image(img)
 
     t1 = time()
@@ -178,42 +179,50 @@ def read_qr(img_row, print_result = True):
     st.write('Time Taken : ', round(1000*(t2 - t1),1), ' ms')
     # st.write(scanned_qr)
 
-    formating_decode = formating_decode_qr_result(scanned_qr, img, print_result)
+    formating_decode = formating_decode_qr_result(scanned_qr, img, page["page"], coords, print_result)
 
     if formating_decode["status"] == "can not read":
       # formating_decode = modify_image_and_read_qr(img, print_result)
-      formating_decode = read_by_openCV(img, print_result)
+      scanned_qr = read_by_openCV(img, print_result)
+      formating_decode = formating_decode_qr_result([scanned_qr[0]] if scanned_qr else None, img, page["page"], coords, print_result)
     
     formatingReadData.append(formating_decode)
 
   return formatingReadData
 
 # Formate decoded qr data to output dict: success scan, is not check qr and is not read 
-def formating_decode_qr_result(scanned_qr, image, print_result = True):
+def formating_decode_qr_result(scanned_qr, image, page, coords, print_result = True):
   st.write(scanned_qr)
   readed_image = {}
+  coords = {
+              "xmin":coords["xmin"],
+              "ymin":coords["ymin"],
+              "xmax":coords["xmax"],
+              "ymax":coords["ymax"],
+            }
   if scanned_qr:
     for qrs in scanned_qr:
       qr_data = decode_qr_data(qrs)
       if qr_data:
         if print_result:
-          # image_with_info, warn = plot_qr_image(qrs, image)
-          # readed_image["image_with_info"] = image_with_info
           readed_image["image"] = image
-          readed_image["status"] = "ok"
           readed_image["data"] = qr_data
-          readed_image["raw_data"] = qrs
+          # readed_image["raw_data"] = qrs
           readed_image["status"] = 1
         return readed_image
       else:
         readed_image["image"] = image
         readed_image["status"] = "qr is not correct"   
         readed_image["data"] = None
+        readed_image["page"] = page
+        readed_image["coords"] = coords
     return readed_image 
   else:
     readed_image["image"] = image
     readed_image["status"] = "can not read"
     readed_image["data"] = None
+    readed_image["page"] = page
+    readed_image["coords"] = coords
   return readed_image
 
 def run_read_image(img):
@@ -241,7 +250,8 @@ def get_images_from_pdf(document):
     for image_file_object in pdfReader.pages[pageObj_images_number].images:
       images.append({
         "image" : Image.open(io.BytesIO(image_file_object.data)),
-        "name" : image_file_object.name
+        "name" : image_file_object.name,
+        "page": pageObj_images_number
       }) 
       count += 1
   st.write(images)  

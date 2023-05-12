@@ -31,7 +31,7 @@ def get_user(username):
 
 
 # --- Document  ---
-def insert_document(doc_type, doc_number, doc_date, doc_create_date, doc_creater, file_name,status):
+def insert_document(doc_type, doc_number, doc_date, doc_create_date, doc_creater, file_name, status, not_readed_data):
     """Returns the user on a successful user creation, otherwise raises and error"""
     return db_doc.put({
         "doc_number": doc_number, 
@@ -40,7 +40,8 @@ def insert_document(doc_type, doc_number, doc_date, doc_create_date, doc_creater
         "doc_create_date": doc_create_date, 
         "doc_creater": doc_creater,
         "file_name" : file_name,
-        "status": status
+        "status": status,
+        "not_readed_data": not_readed_data
     })
 
 

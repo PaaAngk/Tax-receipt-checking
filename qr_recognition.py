@@ -3,7 +3,7 @@ from pyzbar import pyzbar
 from pyzbar.pyzbar import ZBarSymbol
 import numpy as np
 import streamlit as st
-import PyPDF2
+from pypdf import PdfReader
 import torch
 import io
 from PIL import Image, ImageEnhance, ImageSequence, ImageOps
@@ -181,10 +181,10 @@ def read_qr(page, print_result = True):
 
     formating_decode = formating_decode_qr_result(scanned_qr, img, page["page"], coords, print_result)
 
-    if formating_decode["status"] == "can not read":
-      # formating_decode = modify_image_and_read_qr(img, print_result)
-      scanned_qr = read_by_openCV(img, print_result)
-      formating_decode = formating_decode_qr_result([scanned_qr[0]] if scanned_qr else None, img, page["page"], coords, print_result)
+    # if formating_decode["status"] == "can not read":
+    #   # formating_decode = modify_image_and_read_qr(img, print_result)
+    #   scanned_qr = read_by_openCV(img, print_result)
+    #   formating_decode = formating_decode_qr_result([scanned_qr[0]] if scanned_qr else None, img, page["page"], coords, print_result)
     
     formatingReadData.append(formating_decode)
 
@@ -242,7 +242,7 @@ def nn_recognition_qrs(img):
 
 # Return all photo from pdf document with its name
 def get_images_from_pdf(document):
-  pdfReader = PyPDF2.PdfReader(document)
+  pdfReader = PdfReader(document)
 
   count = 0
   images = []

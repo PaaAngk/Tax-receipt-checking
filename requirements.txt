@@ -2,9 +2,8 @@ streamlit_authenticator==0.1.5
 streamlit
 deta
 python-dotenv
-PyPDF2
+pypdf
 Pillow
-PyPDF2[image]
 opencv-python-headless
 pyzbar
 pyzbar[scripts]
@@ -20,7 +19,7 @@ tqdm
 scipy
 setuptools
 wheel
-#opencv-python==4.5.3.56
+opencv-python==4.5.3.56
 opencv-contrib-python
 st-pages
 

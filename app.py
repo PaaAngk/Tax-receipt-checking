@@ -89,44 +89,43 @@ def set_readed_image(scanned_qr):
     all_readed_qr = []
     not_readed_qr = []
     check_status = 1
-    st.write(scanned_qr)
-    for scanned_item in scanned_qr:
-        if scanned_item['result'] and scanned_item['data']:
-            if 'fn' in scanned_item['data']:
-                all_readed_qr.append({
-                    "status" : 1,
-                    "data": scanned_item['data'],
-                    "readed_image" : scanned_item['image'],
-                })
+    for scanned_page in scanned_qr:
+        for scanned_item in scanned_page['result']:
+            if scanned_item and scanned_item['data']:
+                if 'fn' in scanned_item['data']:
+                    all_readed_qr.append({
+                        "status" : 1,
+                        "data": scanned_item['data'],
+                        "readed_image" : scanned_item['image'],
+                    })
+                else:
+                    check_status = 0
+                    all_readed_qr.append({
+                        "status" : "qr is not correct", 
+                        # "image" : scanned_item["image"],
+                        "readed_image": scanned_item['image'],
+                    })
+
+                    not_readed_qr.append({
+                        # "image" : scanned_item["image"],
+                        "readed_image": scanned_item['image'],
+                        "status" : "qr is not correct",
+                        "page" : scanned_page['page'],
+                        "coords" : scanned_item['coords'],
+                    })
             else:
                 check_status = 0
                 all_readed_qr.append({
-                    "status" : "qr is not correct", 
-                    # "image" : scanned_item["image"],
+                    "status" : "can not read",
                     "readed_image": scanned_item['image'],
                 })
 
                 not_readed_qr.append({
-                    # "image" : scanned_item["image"],
                     "readed_image": scanned_item['image'],
-                    "status" : "qr is not correct",
-                    "page" : scanned_item['page'],
+                    "status" : "can not read",
+                    "page" : scanned_page['page'],
                     "coords" : scanned_item['coords'],
                 })
-                
-        else:
-            check_status = 0
-            all_readed_qr.append({
-                "status" : "can not read",
-                "readed_image": scanned_item['image'],
-            })
-
-            not_readed_qr.append({
-                "readed_image": scanned_item['image'],
-                "status" : "can not read",
-                "page" : scanned_item['page'],
-                "coords" : scanned_item['coords'],
-            })
     return all_readed_qr, not_readed_qr, check_status
 
 
@@ -213,15 +212,16 @@ if authentication_status:
                     if doc_type and doc_number and doc_date:
                         doc_date_to_save = doc_date
                         system_date = date.today().strftime("%d-%m-%Y")
+
                         if doc_type=="Авансовый отчёт":
                             with st.spinner("Пожалуйста, подождите..."):
                                 parsed_pages = parse_enter_document(enter_file)
                                 if (parsed_pages):
                                     #Read all image in file and scanned qr on each
-                                    for pil_image in parsed_pages:
+                                    for page in parsed_pages:
                                         scanned_qr.append({
-                                            "page":pil_image["page"],
-                                            "result": rec.read_qr(pil_image["image"])
+                                            "page":page["page"],
+                                            "result": rec.read_qr(page)
                                         })
 
                                     all_readed_qr, not_readed_qr, check_status = set_readed_image(scanned_qr)

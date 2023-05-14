@@ -7,6 +7,8 @@ import time
 import streamlit.components.v1 as components
 import base64
 
+st.set_page_config(page_title="Найти документ", page_icon=":bar_chart:", layout="wide")
+
 result = None
 def timestap_from_date(date):
     return time.mktime(date.timetuple())

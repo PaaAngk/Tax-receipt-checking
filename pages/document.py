@@ -80,46 +80,53 @@ if result:
         with col6:
             col6.write( "Проверен" if check_null(item['status']) == 1 else "Не проверен" )
         with col7:  
-            file_path = os.getcwd() + '/tempDir/'+item['file_name']
-            with open(file_path, "rb") as file:
-                base64_pdf = base64.b64encode(file.read()).decode("utf-8")
-                    
-                components.html(f"""
-                            <html>
-                                <button id="elem" style="background-color: transparent; border: none; color: white; text-decoration: underline;"> Просмотреть документ </button>
-                                <script> 
-                                    function display() {{
-                                        console.log("j");
-                                        var byteArray = new Uint8Array(atob("{base64_pdf}").split('').map(function(char) {{
-                                            return char.charCodeAt(0);
-                                        }}));
-                                        var file = new Blob([byteArray], {{ type: 'application/pdf' }});
-                                        var fileURL = URL.createObjectURL(file);
-                                        window.open(fileURL);
-                                    }};
-                                    window.onload = function() {{
-                                        document.getElementById("elem").onclick = display;
-                                    }};
-                                </script>
-                            </html>
-                        """) 
-                file.close()          
-            
+            try:
+                file_path = os.getcwd() + '/tempDir/'+item['file_name']
+                
+                with open(file_path, "rb") as file:
+                    base64_pdf = base64.b64encode(file.read()).decode("utf-8")
+                        
+                    components.html(f"""
+                                <html>
+                                    <button id="elem" style="background-color: transparent; border: none; color: white; text-decoration: underline;"> Просмотреть документ </button>
+                                    <script> 
+                                        function display() {{
+                                            console.log("j");
+                                            var byteArray = new Uint8Array(atob("{base64_pdf}").split('').map(function(char) {{
+                                                return char.charCodeAt(0);
+                                            }}));
+                                            var file = new Blob([byteArray], {{ type: 'application/pdf' }});
+                                            var fileURL = URL.createObjectURL(file);
+                                            window.open(fileURL);
+                                        }};
+                                        window.onload = function() {{
+                                            document.getElementById("elem").onclick = display;
+                                        }};
+                                    </script>
+                                </html>
+                            """) 
+                    file.close()          
+            except Exception:
+                st.write("Не удалось найти файл")
+
         with col8:
-            file_name = item['file_name'].split('__')[-1]
-            with open(file_path, "rb") as file:
-                        base64_pdf = base64.b64encode(file.read()).decode("utf-8")
-                        file.close()
-            href = f'<a style="background-color: transparent; border: none; color: white;" href="data:application/pdf;base64,{base64_pdf}" download="{file_name}.pdf">Скачать PDF файл</a>'
-            no_reload()
-            #print("nothing")
-            st.markdown(href, unsafe_allow_html=True)
+            try:
+                file_name = item['file_name'].split('__')[-1]
+                with open(file_path, "rb") as file:
+                    base64_pdf = base64.b64encode(file.read()).decode("utf-8")
+                    file.close()
+                    href = f'<a style="background-color: transparent; border: none; color: white;" href="data:application/pdf;base64,{base64_pdf}" download="{file_name}">Скачать файл</a>'
+                    no_reload()
+                    #print("nothing")
+                    st.markdown(href, unsafe_allow_html=True)
+            except Exception:
+                st.write("Не удалось найти файл")
            
            
 if result and len(result) == 0:
     st.warning("Документы не найдены")
     
-st.write(result)
+# st.write(result)
 
 
 # ---- HIDE STREAMLIT STYLE ----

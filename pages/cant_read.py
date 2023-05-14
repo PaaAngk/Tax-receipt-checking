@@ -5,15 +5,15 @@ import database as db
 import os
 import streamlit.components.v1 as components
 import base64
-
 st.set_page_config(page_title="Неподтверждённые авансовые отчёты", page_icon=":bar_chart:", layout="wide")
+import PyPDF2
+
 
 result = None
 def timestap_from_date(date):
     return time.mktime(date.timetuple())
 
 def get_avanc_report_by_status(status):
-    print(status)
     return db.get_avanc_report_by_status((status))
 
 def no_reload():
@@ -37,7 +37,15 @@ def js_redirect(url):
     st.markdown(html, unsafe_allow_html=True)
 
 
-
+def print_box_in_pdf(file, boxes):
+    pdfReader = PyPDF2.PdfReader(file)
+    pdfReader.getPage(1)
+    x, y,w,h = 100, 100, 200, 200
+    
+     
+# if "page" in st.experimental_get_query_params():
+#     if st.experimental_get_query_params()["page"] == page_path:
+#         st.write("Вы перешли на другую страницу")
 # ------------------------  Table  ------------------------ #
 if result:
     col_size =(1, 1, 1, 1, 1, 1, 2, 2, 1)
@@ -61,47 +69,51 @@ if result:
         with col6:
             col6.write(item['status'] if item['status'] != None else 'Нет данных')
         with col7:
-           file_path = os.getcwd() + '/tempDir/'+item['file_name']
-           with open(file_path, "rb") as file:
-                base64_pdf = base64.b64encode(file.read()).decode("utf-8")
-                    
-                components.html(f"""
-                            <html>
-                                <button id="elem" style="background-color: transparent; border: none; color: white; text-decoration: underline;"> Просмотреть документ </button>
-                                <script> 
-                                    function display() {{
-                                        console.log("j");
-                                        var byteArray = new Uint8Array(atob("{base64_pdf}").split('').map(function(char) {{
-                                            return char.charCodeAt(0);
-                                        }}));
-                                        var file = new Blob([byteArray], {{ type: 'application/pdf' }});
-                                        var fileURL = URL.createObjectURL(file);
-                                        window.open(fileURL);
-                                    }};
-                                    window.onload = function() {{
-                                        document.getElementById("elem").onclick = display;
-                                    }};
-                                </script>
-                            </html>
-                        """) 
-                file.close() 
+            if st.button("Просмотреть документ", key=index):
+                try:
+                    file_path = os.getcwd() + '/tempDir/'+item['file_name']
+                    with open(file_path, "rb") as file:
+                        base64_pdf = base64.b64encode(file.read()).decode("utf-8")
+                        file.close() 
+                        components.html(f"""
+                                    <html>
+                                        <script> 
+                                            var byteArray = new Uint8Array(atob("{base64_pdf}").split('').map(function(char) {{
+                                                return char.charCodeAt(0);
+                                            }}));
+                                            var file = new Blob([byteArray], {{ type: 'application/pdf' }});
+                                            var fileURL = URL.createObjectURL(file);
+                                            window.open(fileURL);
+                                        </script>
+                                    </html>
+                                """) 
+                        
+                except FileNotFoundError:
+                    st.write("Не удалось найти файл")
         with col8:
-            file_name = item['file_name'].split('__')[-1]
-            with open(file_path, "rb") as file:
-                base64_pdf = base64.b64encode(file.read()).decode("utf-8")
-                href = f'<a style="background-color: transparent; border: none; color: white;" href="data:application/pdf;base64,{base64_pdf}" download="{file_name}.pdf">Скачать PDF файл</a>'
-            no_reload()
-            #print("nothing")
-            st.markdown(href, unsafe_allow_html=True)
+            if st.button("Скачать PDF файл", key=index+100):
+                try:
+                    file_path = os.getcwd() + '/tempDir/'+item['file_name']
+                    file_name = item['file_name'].split('__')[-1]
+                    with open(file_path, "rb") as file:
+                        base64_pdf = base64.b64encode(file.read()).decode("utf-8")
+                        file.close()
+                        components.html(f"""
+                                    <html>
+                                        <script> 
+                                            var link = document.createElement("a");
+                                            link.setAttribute('download', "{file_name}");
+                                            link.setAttribute('href', "data:application/pdf;base64,{base64_pdf}");
+                                            link.click();
+                                            link.remove();
+                                        </script>
+                                    </html>
+                                """) 
+                except FileNotFoundError:
+                    st.write("Не удалось найти файл")
         with col9:
              if st.button("Проверить повторно", key=index+1):
                 st.experimental_set_query_params(
-                file_name=file_name,
-                doc_creater=item['doc_creater'],
-                doc_date=int(item['doc_date']),
-                doc_number=item['doc_number'],
-                doc_type=item['doc_type'],
-                status=item['status'],
                 file_path=file_path
             )
 
@@ -110,24 +122,9 @@ if result:
 
             # Печатаем параметры запроса
                 print(params)
-                js_redirect("http://localhost:8501/")
+                js_redirect("http://localhost:8501/%22)
 
-
-
-        # col_size_pg=(1,2,2)
-        # colms_pg = st.columns(col_size_pg)
-        # fields_pg = ["№", 'Страница']
-        # for col, field_name in zip(colms_pg, fields_pg):
-        #     col.write(field_name)
-        # kol_pages=[]
-        # for page in kol_pages:
-        #     col1_pg, col2_pg, col3_pg = st.columns(col_size_pg)
-        #     with col1_pg:
-        #         st.write(index+1)
-        #     with col2_pg:#здесь ссылка на просмотре страницы с чеком
-        #         print()
-        #     with col3_pg:#здесь кнопка на подтверждание
-        #         print()
+            
 
 
         
@@ -136,4 +133,4 @@ if result:
 if result and len(result) == 0:
     st.warning("Документы не найдены")
     
-st.write(result)
+# st.write(result)

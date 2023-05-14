@@ -101,13 +101,13 @@ def perspective(img, position = 'top'):
     img = img.transform((width, height), Image.PERSPECTIVE, find_coeffs(stock, [(0, 0), (width+20, -20), (width+20, height+20), (0, height)]),Image.BICUBIC)
   return img
 
-def modify_image_and_read_qr(img, print_result):
+def modify_image_and_read_qr(img, page, coords, print_result):
   formating_decode = None
 
   for rotate_val in [0, 90, 45]:
     for perspective_val in ['', 'top', 'bottom', 'left', 'right']:
       for sharpness in [1, 2, 0.5]:
-        for scalar in [1, 3, 0.7]:
+        for scalar in [1, 1.7, 0.7]:
 
           
           if sharpness != 1:
@@ -118,10 +118,10 @@ def modify_image_and_read_qr(img, print_result):
           if scalar != 1:
             prep_image = scale_image(prep_image, scalar=scalar)
           prep_image = rotate(prep_image, rotate_val)
-
-          scanned_qr = pyzbar.decode(prep_image, [ZBarSymbol.QRCODE])
+ 
+          scanned_qr = read_by_openCV(img)
           st.write(scanned_qr)
-          formating_decode = formating_decode_qr_result(scanned_qr, img, print_result)
+          formating_decode = formating_decode_qr_result([scanned_qr[0]] if scanned_qr else None, img, page, coords, print_result)
           
           st.write("sharpe ", sharpness, ' perspective ', perspective_val, ' scale ', scalar, ' rotate ', rotate_val)
           st.image(prep_image)
@@ -156,7 +156,7 @@ def crop_qr(detection_qr):
     img = cropped_detection_qr[0]
   return img
 
-def read_by_openCV(img, print_result):
+def read_by_openCV(img):
   res, _ = detector.detectAndDecode(cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR))
   st.write(res)
   return res
@@ -164,6 +164,7 @@ def read_by_openCV(img, print_result):
 def read_qr(page, print_result = True):
   detection_qr = nn_recognition_qrs(page["image"])
   qr_coords  = json.loads(detection_qr.pandas().xyxy[0].to_json(orient="records"))
+  st.write(qr_coords)
 
   #Getting array of detected QRs by NN 
   scanned_QRs = [ImageOps.grayscale(Image.fromarray(x['im']))for x in detection_qr.crop(save=False)]
@@ -181,10 +182,10 @@ def read_qr(page, print_result = True):
 
     formating_decode = formating_decode_qr_result(scanned_qr, img, page["page"], coords, print_result)
 
-    # if formating_decode["status"] == "can not read":
-    #   # formating_decode = modify_image_and_read_qr(img, print_result)
-    #   scanned_qr = read_by_openCV(img, print_result)
-    #   formating_decode = formating_decode_qr_result([scanned_qr[0]] if scanned_qr else None, img, page["page"], coords, print_result)
+    if formating_decode["status"] == "can not read":
+      formating_decode = modify_image_and_read_qr(img, page["page"], coords,  print_result)
+      # scanned_qr = read_by_openCV(img, print_result)
+      # formating_decode = formating_decode_qr_result([scanned_qr[0]] if scanned_qr else None, img, page["page"], coords, print_result)
     
     formatingReadData.append(formating_decode)
 
@@ -232,7 +233,7 @@ def run_read_image(img):
 
 def nn_recognition_qrs(img):
   start_time = time()
-  model.conf = 0.7
+  model.conf = 0.82
   results = model(img)
 
   st.write("NN read time: ", (time() - start_time))
@@ -261,12 +262,12 @@ def get_images_from_tif(document):
   im = Image.open(document)
 
   images = []
-  for image in ImageSequence.Iterator(im):
+  for index, image in enumerate(ImageSequence.Iterator(im)):
     img = Image.fromarray(np.array(image))
-    if img.mode == 'RGBA':
-      images.append({
-        "image" : img
-      }) 
+    images.append({
+      "image" : img,
+      "page": index
+    }) 
   st.write(images)
   return images
 

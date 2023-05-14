@@ -227,8 +227,8 @@ if authentication_status:
                                                         "coords" : qr['coords'],
                                                     } for qr in not_readed_qr ] if len(not_readed_qr) > 0 else None
                                     
-                                    file_name = save_uploadedfile(enter_file, doc_type, doc_number, doc_date.strftime("%d-%m-%Y"), system_date)
-                                    db.insert_document(doc_type, doc_number, doc_date_to_save, system_date, name, file_name, check_status, not_readet_data) 
+                                    # file_name = save_uploadedfile(enter_file, doc_type, doc_number, doc_date.strftime("%d-%m-%Y"), system_date)
+                                    # db.insert_document(doc_type, doc_number, doc_date_to_save, system_date, name, file_name, check_status, not_readet_data) 
                         else: 
                             file_name = save_uploadedfile(enter_file, doc_type, doc_number, doc_date.strftime("%d-%m-%Y"), system_date)
                             db.insert_document(doc_type, doc_number, doc_date_to_save, system_date, name, file_name, None)                     

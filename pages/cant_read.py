@@ -39,14 +39,14 @@ def js_redirect(url):
 
 def create_rect(coords):
     return AnnotationBuilder.rectangle(
-        rect=(coords["xmin"]/2, coords["ymin"]/6, coords["xmax"]/1.7, coords["ymax"]/4.5),
+        rect=(coords["xmin"]/2.2, (coords["ymin"]-1000)/3, coords["xmax"]/1.7, (coords["ymax"] - 1000)/2.5),
     )
-
+# coords["xmin"]/2, coords["ymin"]/6, coords["xmax"]/1.7, coords["ymax"]/4.5
 # {"coords": {
 #       "xmax": 912.7886352539,
 #       "xmin": 691.9747924805,
 #       "ymax": 2095.96484375,
-#       "ymin": 1860.0693359375
+#       "ymin": 1860.0693359375 [xLL, yLL, xUR, yUR]
 #     },
 #     "page": 3}
 def print_box_in_pdf(file, not_readed_data):
@@ -59,9 +59,11 @@ def print_box_in_pdf(file, not_readed_data):
         annotation = create_rect(item['coords'])
         print(annotation)
         writer.add_annotation(page_number=int(item['page']), annotation=annotation)
+    writer.add_annotation(page_number=0, annotation=AnnotationBuilder.rectangle(
+            rect=(10, 10, 550, 800),
+        ))
     with BytesIO() as bytes_stream:
         return base64.b64encode(writer.write(bytes_stream)[1].getvalue() ).decode("utf-8")
-
 
 
 # ------------------------  Table  ------------------------ #

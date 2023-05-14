@@ -88,7 +88,7 @@ if result:
         with col6:
             col6.write(item['status'] if item['status'] != None else 'Нет данных')
         with col7:
-            if st.button("Просмотреть документ", key=index+500):
+            if st.button("Просмотреть документ", key=index):
                 try:
                     with open(file_path, "rb") as file:
                         not_readed_data = item['not_readed_data']
@@ -112,7 +112,7 @@ if result:
                 except FileNotFoundError:
                     st.write("Не удалось найти файл")
         with col8:
-            if st.button("Скачать PDF файл", key=index+500):
+            if st.button("Скачать PDF файл", key=index+1000):
                 try:
                     file_name = item['file_name'].split('__')[-1]
                     with open(file_path, "rb") as file:

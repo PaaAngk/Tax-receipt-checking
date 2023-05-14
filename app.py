@@ -137,7 +137,7 @@ def save_uploadedfile(uploadedfile, doc_type, doc_number, doc_date, system_date)
 
 def parse_enter_document(enter_file):
     if enter_file is not None:
-        _, file_extension = enter_file.split('.')
+        _, file_extension = enter_file.type.split('/')
         if file_extension == "pdf":
             try:
                 return rec.get_images_from_pdf(enter_file)
@@ -155,15 +155,14 @@ def parse_enter_document(enter_file):
  
 params = st.experimental_get_query_params()
 path_file_check = params.get("file_path", [None])[0]
-path=path_file_check
-print("Здесь путь к файлу " + path_file_check)
-type_with_all, doc_number_check, doc_date_check, system_date_check, enter_file_check = path_file_check.split("__")
-type_with_all = os.path.basename(type_with_all)
-doc_type_check = type_with_all.split("__")[0]
-print(doc_type_check, doc_number_check, doc_date_check, system_date_check, enter_file_check )
+if path_file_check:
+    path=path_file_check
+    print("Здесь путь к файлу " + path_file_check)
+    type_with_all, doc_number_check, doc_date_check, system_date_check, enter_file_check = path_file_check.split("__")
+    type_with_all = os.path.basename(type_with_all)
+    doc_type_check = type_with_all.split("__")[0]
+    print(doc_type_check, doc_number_check, doc_date_check, system_date_check, enter_file_check )
 
-with open(path_file_check, 'rb') as f:
-    contents = f.read()
     #data = base64.b64encode(contents).decode('utf-8')
     #enter_file_check_file = f"data:application/pdf;base64,{data}"
     
@@ -183,7 +182,7 @@ if authentication_status:
     with left_column:
         st.subheader("Загрузка документа:")
         with st.form("doc"):
-            if params:
+            if path_file_check:
                 doc_type_index = document_types.index(doc_type_check)
                 doc_type = st.selectbox("Выберите тип документа", document_types, index=doc_type_index)
                 doc_number = st.text_input("Номер документа", value = doc_number_check )
@@ -202,15 +201,13 @@ if authentication_status:
                 enter_file = st.file_uploader("Загрузить документ", type=["pdf", "tif", "tiff"], )
                
             submitted = st.form_submit_button("Сохранить")
-
-            
             progress_text = "Операция выполняется. Пожалуйста, подождите"
             
             if submitted:
                 if enter_file:
                     scanned_qr = []
                     if doc_type and doc_number and doc_date:
-                        doc_date_to_save = doc_date
+                        doc_date_to_save = time.mktime(doc_date.timetuple())
                         system_date = date.today().strftime("%d-%m-%Y")
 
                         if doc_type=="Авансовый отчёт":
@@ -229,7 +226,7 @@ if authentication_status:
                                                         "page" : qr['page'],
                                                         "coords" : qr['coords'],
                                                     } for qr in not_readed_qr ] if len(not_readed_qr) > 0 else None
-
+                                    
                                     file_name = save_uploadedfile(enter_file, doc_type, doc_number, doc_date.strftime("%d-%m-%Y"), system_date)
                                     db.insert_document(doc_type, doc_number, doc_date_to_save, system_date, name, file_name, check_status, not_readet_data) 
                         else: 

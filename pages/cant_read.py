@@ -5,6 +5,7 @@ import database as db
 import os
 import streamlit.components.v1 as components
 import base64
+st.set_page_config(page_title="Неподтверждённые авансовые отчёты", page_icon=":bar_chart:", layout="wide")
 import PyPDF2
 
 
@@ -30,49 +31,24 @@ st.title("Неподтверждённые авансовые отчёты")
 status = 0
 result = get_avanc_report_by_status(status)
 
-#if st.button("Перейти на другую страницу", key=9):
-    # # Получаем абсолютный путь к текущему файлу
-    # current_file_path = os.path.abspath(__file__)
-    # # Получаем часть пути до имени проекта
-    # root_path = os.path.dirname(os.path.dirname(current_file_path))
-    # # Формируем относительный путь к нужной странице
-    # page_path = os.path.join(root_path, "pages\\", "document.py")
-    # print(current_file_path)
-    # print(page_path)
-    #             # Устанавливаем параметры запроса для перехода на другую страницу
-    # st.experimental_set_query_params(page="Найти документ")
-    #             # Перезапускаем приложение
-    # st.experimental_rerun()
-# html_code="""
-                             
-#         <html>
-#         <a href="http://localhost:8501/Найти документ"></a>                     
-#         <script> 
-#      window.location.assign = "http://localhost:8501/Найти документ";
-#      <a href
-#         </script>
-#         </html>
-#       """
-# components.html(html_code)
-# hreff=f'<a href="http://localhost:8501/Найти документ"></a> '
-# href1 = f'<a style="background-color: transparent; border: none; color: white;" href="http://localhost:8501">Скачать PDF файл</a>'
-# st.markdown(href1, unsafe_allow_html=True)
+def js_redirect(url):
+    js = f"window.location.href = '{url}'"
+    html = f'<html><head><meta http-equiv="refresh" content="0;url={url}"></head><body></body></html>'
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def print_box_in_pdf(file, boxes):
     pdfReader = PyPDF2.PdfReader(file)
-
     pdfReader.getPage(1)
     x, y,w,h = 100, 100, 200, 200
     
      
-
 # if "page" in st.experimental_get_query_params():
 #     if st.experimental_get_query_params()["page"] == page_path:
 #         st.write("Вы перешли на другую страницу")
 # ------------------------  Table  ------------------------ #
 if result:
-    col_size =(1, 1, 1, 1, 1, 1, 2, 2,1)
+    col_size =(1, 1, 1, 1, 1, 1, 2, 2, 1)
     colms = st.columns(col_size)
     fields = ["№", 'Создал', 'Дата', 'Номер документа', "Тип", "Статус"]
     for col, field_name in zip(colms, fields):
@@ -135,15 +111,19 @@ if result:
                                 """) 
                 except FileNotFoundError:
                     st.write("Не удалось найти файл")
-        # with col9:
-        #      # Создаем объект состояния
-        #     st.session_state['file_contents']=None
+        with col9:
+             if st.button("Проверить повторно", key=index+1):
+                st.experimental_set_query_params(
+                file_path=file_path
+            )
 
-        #         # Если файл загружен, сохраняем его содержимое в SessionState
-        #     with open(file_path, "rb") as file:
-        #         file_contents = file.read()
-        #         st.session_state['file_contents'] = file_contents
-        #         file.close()
+            # Получаем параметры запроса
+                params = st.experimental_get_query_params()
+
+            # Печатаем параметры запроса
+                print(params)
+                js_redirect("http://localhost:8501/%22)
+
             
 
 

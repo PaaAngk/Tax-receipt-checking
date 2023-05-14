@@ -13,7 +13,6 @@ def timestap_from_date(date):
     return time.mktime(date.timetuple())
 
 def get_avanc_report_by_status(status):
-    print(status)
     return db.get_avanc_report_by_status((status))
 
 def no_reload():
@@ -94,44 +93,48 @@ if result:
         with col6:
             col6.write(item['status'] if item['status'] != None else 'Нет данных')
         with col7:
-            try:
-                file_path = os.getcwd() + '/tempDir/'+item['file_name']
-                with open(file_path, "rb") as file:
+            if st.button("Просмотреть документ", key=index):
+                try:
+                    file_path = os.getcwd() + '/tempDir/'+item['file_name']
+                    with open(file_path, "rb") as file:
                         base64_pdf = base64.b64encode(file.read()).decode("utf-8")
+                        file.close() 
                         components.html(f"""
                                     <html>
-                                        <button id="elem" style="background-color: transparent; border: none; color: white; text-decoration: underline;"> Просмотреть документ </button>
                                         <script> 
-                                            function display() {{
-                                                console.log("j");
-                                                var byteArray = new Uint8Array(atob("{base64_pdf}").split('').map(function(char) {{
-                                                    return char.charCodeAt(0);
-                                                }}));
-                                                var file = new Blob([byteArray], {{ type: 'application/pdf' }});
-                                                var fileURL = URL.createObjectURL(file);
-                                                window.open(fileURL);
-                                            }};
-                                            window.onload = function() {{
-                                                document.getElementById("elem").onclick = display;
-                                            }};
+                                            var byteArray = new Uint8Array(atob("{base64_pdf}").split('').map(function(char) {{
+                                                return char.charCodeAt(0);
+                                            }}));
+                                            var file = new Blob([byteArray], {{ type: 'application/pdf' }});
+                                            var fileURL = URL.createObjectURL(file);
+                                            window.open(fileURL);
                                         </script>
                                     </html>
                                 """) 
-                        file.close() 
-            except FileNotFoundError:
-                st.write("Не удалось найти файл")
+                        
+                except FileNotFoundError:
+                    st.write("Не удалось найти файл")
         with col8:
-            try:
-                file_name = item['file_name'].split('__')[-1]
-                with open(file_path, "rb") as file:
-                            base64_pdf = base64.b64encode(file.read()).decode("utf-8")
-                            file.close()
-                href = f'<a style="background-color: transparent; border: none; color: white;" href="data:application/pdf;base64,{base64_pdf}" download="{file_name}.pdf">Скачать PDF файл</a>'
-                no_reload()
-                #print("nothing")
-                st.markdown(href, unsafe_allow_html=True)
-            except FileNotFoundError:
-                st.write("Не удалось найти файл")
+            if st.button("Скачать PDF файл", key=index+100):
+                try:
+                    file_path = os.getcwd() + '/tempDir/'+item['file_name']
+                    file_name = item['file_name'].split('__')[-1]
+                    with open(file_path, "rb") as file:
+                        base64_pdf = base64.b64encode(file.read()).decode("utf-8")
+                        file.close()
+                        components.html(f"""
+                                    <html>
+                                        <script> 
+                                            var link = document.createElement("a");
+                                            link.setAttribute('download', "{file_name}");
+                                            link.setAttribute('href', "data:application/pdf;base64,{base64_pdf}");
+                                            link.click();
+                                            link.remove();
+                                        </script>
+                                    </html>
+                                """) 
+                except FileNotFoundError:
+                    st.write("Не удалось найти файл")
         # with col9:
         #      # Создаем объект состояния
         #     st.session_state['file_contents']=None

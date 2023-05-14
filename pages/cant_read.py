@@ -36,12 +36,11 @@ def js_redirect(url):
     html = f'<html><head><meta http-equiv="refresh" content="0;url={url}"></head><body></body></html>'
     st.markdown(html, unsafe_allow_html=True)
 
-if st.button("Перейти"):
-    js_redirect("http://localhost:8501/")
+
 
 # ------------------------  Table  ------------------------ #
 if result:
-    col_size =(1, 1, 1, 1, 1, 1, 2, 2,1)
+    col_size =(1, 1, 1, 1, 1, 1, 2, 2, 1)
     colms = st.columns(col_size)
     fields = ["№", 'Создал', 'Дата', 'Номер документа', "Тип", "Статус"]
     for col, field_name in zip(colms, fields):
@@ -89,22 +88,29 @@ if result:
         with col8:
             file_name = item['file_name'].split('__')[-1]
             with open(file_path, "rb") as file:
-                        base64_pdf = base64.b64encode(file.read()).decode("utf-8")
-                        file.close()
-            href = f'<a style="background-color: transparent; border: none; color: white;" href="data:application/pdf;base64,{base64_pdf}" download="{file_name}.pdf">Скачать PDF файл</a>'
+                base64_pdf = base64.b64encode(file.read()).decode("utf-8")
+                href = f'<a style="background-color: transparent; border: none; color: white;" href="data:application/pdf;base64,{base64_pdf}" download="{file_name}.pdf">Скачать PDF файл</a>'
             no_reload()
             #print("nothing")
             st.markdown(href, unsafe_allow_html=True)
         with col9:
-             # Создаем объект состояния
-            st.session_state['file_contents']=None
+             if st.button("Проверить повторно", key=index+1):
+                st.experimental_set_query_params(
+                file_name=file_name,
+                doc_creater=item['doc_creater'],
+                doc_date=int(item['doc_date']),
+                doc_number=item['doc_number'],
+                doc_type=item['doc_type'],
+                status=item['status'],
+                file_path=file_path
+            )
 
-                # Если файл загружен, сохраняем его содержимое в SessionState
-            with open(file_path, "rb") as file:
-                file_contents = file.read()
-                st.session_state['file_contents'] = file_contents
-                file.close()
-            
+            # Получаем параметры запроса
+                params = st.experimental_get_query_params()
+
+            # Печатаем параметры запроса
+                print(params)
+                js_redirect("http://localhost:8501/")
 
 
 

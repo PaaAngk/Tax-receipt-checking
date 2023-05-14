@@ -99,20 +99,18 @@ def set_readed_image(scanned_qr):
                         "readed_image" : scanned_item['image'],
                     })
                 else:
-                    check_status = 0
                     all_readed_qr.append({
                         "status" : "qr is not correct", 
                         # "image" : scanned_item["image"],
                         "readed_image": scanned_item['image'],
                     })
 
-                    not_readed_qr.append({
-                        # "image" : scanned_item["image"],
-                        "readed_image": scanned_item['image'],
-                        "status" : "qr is not correct",
-                        "page" : scanned_page['page'],
-                        "coords" : scanned_item['coords'],
-                    })
+                    # not_readed_qr.append({
+                    #     # "image" : scanned_item["image"],
+                    #     "readed_image": scanned_item['image'],
+                    #     "status" : "qr is not correct",
+                    #     "page" : scanned_page['page'],
+                    # })
             else:
                 check_status = 0
                 all_readed_qr.append({
@@ -128,7 +126,6 @@ def set_readed_image(scanned_qr):
                 })
     return all_readed_qr, not_readed_qr, check_status
 
-
 def save_uploadedfile(uploadedfile, doc_type, doc_number, doc_date, system_date):
     file_name = doc_type+"__"+doc_number+"__"+doc_date+"__"+system_date+"__"+uploadedfile.name
     with open(os.path.join("tempDir",file_name),"wb") as f:
@@ -136,8 +133,12 @@ def save_uploadedfile(uploadedfile, doc_type, doc_number, doc_date, system_date)
     return file_name
 
 def parse_enter_document(enter_file):
+    
     if enter_file is not None:
-        _, file_extension = enter_file.type.split('/')
+        if isinstance(enter_file, str):
+            file_extension = enter_file.split('.')[-1]
+        else:
+            _, file_extension = enter_file.type.split('/')
         if file_extension == "pdf":
             try:
                 return rec.get_images_from_pdf(enter_file)
@@ -165,7 +166,6 @@ if path_file_check:
 
     #data = base64.b64encode(contents).decode('utf-8')
     #enter_file_check_file = f"data:application/pdf;base64,{data}"
-    
 
 #params = st.experimental_get_query_params()
 path_file_check = params.get("file_path", None)
@@ -175,67 +175,72 @@ if authentication_status:
     not_readed_qr = []
     all_readed_qr = []
     check_status = None
-
-    exec_time = None
+    allow_save = False
 
     left_column, right_column = st.columns(2)
     with left_column:
         st.subheader("Загрузка документа:")
-        with st.form("doc"):
-            if path_file_check:
-                doc_type_index = document_types.index(doc_type_check)
-                doc_type = st.selectbox("Выберите тип документа", document_types, index=doc_type_index)
-                doc_number = st.text_input("Номер документа", value = doc_number_check )
-                doc_date = st.date_input("Дата", value=datetime.strptime(doc_date_check, "%d-%m-%Y"))
-                #enter_file = st.file_uploader("Загрузить документ", type=["pdf", "tif", "tiff"], )
-                
-                ext=enter_file_check.split(".")[-1]
-                print("Это расширение", ext)
-                #enter_file = {"content": contents, "type": f"application/{ext}", "name": path_file_check}
-                enter_file=path 
-                
-            else:
-                doc_type = st.selectbox("Выберите тип документа", document_types)
-                doc_number = st.text_input("Номер документа")
-                doc_date = st.date_input("Дата")
-                enter_file = st.file_uploader("Загрузить документ", type=["pdf", "tif", "tiff"], )
-               
-            submitted = st.form_submit_button("Сохранить")
-            progress_text = "Операция выполняется. Пожалуйста, подождите"
-            
-            if submitted:
-                if enter_file:
-                    scanned_qr = []
-                    if doc_type and doc_number and doc_date:
-                        doc_date_to_save = time.mktime(doc_date.timetuple())
-                        system_date = date.today().strftime("%d-%m-%Y")
+        if path_file_check:
+            doc_type_index = document_types.index(doc_type_check)
+            doc_type = st.selectbox("Выберите тип документа", document_types, index=doc_type_index)
+            doc_number = st.text_input("Номер документа", value = doc_number_check )
+            doc_date = st.date_input("Дата", value=datetime.strptime(doc_date_check, "%d-%m-%Y"))
+            #enter_file = st.file_uploader("Загрузить документ", type=["pdf", "tif", "tiff"], )
 
-                        if doc_type=="Авансовый отчёт":
-                            with st.spinner("Пожалуйста, подождите..."):
-                                parsed_pages = parse_enter_document(enter_file)
-                                if (parsed_pages):
-                                    #Read all image in file and scanned qr on each
-                                    for page in parsed_pages:
-                                        scanned_qr.append({
-                                            "page":page["page"],
-                                            "result": rec.read_qr(page)
-                                        })
+            ext=enter_file_check.split(".")[-1]
+            print("Это расширение", ext)
+            #enter_file = {"content": contents, "type": f"application/{ext}", "name": path_file_check}
+            enter_file=path 
 
-                                    all_readed_qr, not_readed_qr, check_status = set_readed_image(scanned_qr)
-                                    not_readet_data = [{
-                                                        "page" : qr['page'],
-                                                        "coords" : qr['coords'],
-                                                    } for qr in not_readed_qr ] if len(not_readed_qr) > 0 else None
-                                    
+        else:
+            doc_type = st.selectbox("Выберите тип документа", document_types)
+            doc_number = st.text_input("Номер документа")
+            doc_date = st.date_input("Дата")
+            enter_file = st.file_uploader("Загрузить документ", type=["pdf", "tif", "tiff"], )
+        
+
+        submitted = st.button("Сохранить")
+        progress_text = "Операция выполняется. Пожалуйста, подождите"
+        
+        if submitted:
+            if enter_file:
+                scanned_qr = []
+                if doc_type and doc_number and doc_date:
+                    doc_date_to_save = time.mktime(doc_date.timetuple())
+                    system_date = date.today().strftime("%d-%m-%Y")
+
+                    if doc_type=="Авансовый отчёт":
+                        with st.spinner("Пожалуйста, подождите..."):
+                            parsed_pages = parse_enter_document(enter_file)
+                            if (parsed_pages):
+                                #Read all image in file and scanned qr on each
+                                for page in parsed_pages:
+                                    scanned_qr.append({
+                                        "page":page["page"],
+                                        "result": rec.read_qr(page)
+                                    })
+
+                                all_readed_qr, not_readed_qr, check_status = set_readed_image(scanned_qr)
+                                not_readet_data = [{
+                                                    "page" : qr['page'],
+                                                    "coords" : qr['coords'],
+                                                } for qr in not_readed_qr ] if len(not_readed_qr) > 0 else None
+                                if not_readet_data:
                                     # file_name = save_uploadedfile(enter_file, doc_type, doc_number, doc_date.strftime("%d-%m-%Y"), system_date)
-                                    # db.insert_document(doc_type, doc_number, doc_date_to_save, system_date, name, file_name, check_status, not_readet_data) 
-                        else: 
-                            file_name = save_uploadedfile(enter_file, doc_type, doc_number, doc_date.strftime("%d-%m-%Y"), system_date)
-                            db.insert_document(doc_type, doc_number, doc_date_to_save, system_date, name, file_name, None)                     
-                    else:
-                        st.warning("Пожалуйста, заполните все поля")
+                                    # doc_in_db = db.insert_document(doc_type, doc_number, doc_date_to_save, system_date, name, file_name, check_status, not_readet_data) 
+                                    if st.button("Подтвердить подлинность"):
+                                        # res = db.update_document(doc_in_db["key"], doc_type, doc_number, doc_date_to_save, system_date, name, file_name, 1, not_readet_data)
+                                        st.write("12345")
+                                
+                                # file_name = save_uploadedfile(enter_file, doc_type, doc_number, doc_date.strftime("%d-%m-%Y"), system_date)
+                                # db.insert_document(doc_type, doc_number, doc_date_to_save, system_date, name, file_name, check_status, None) 
+                    else: 
+                        file_name = save_uploadedfile(enter_file, doc_type, doc_number, doc_date.strftime("%d-%m-%Y"), system_date)
+                        db.insert_document(doc_type, doc_number, doc_date_to_save, system_date, name, file_name, None)                     
                 else:
-                    st.warning("Пожалуйста, прикрепите документ")
+                    st.warning("Пожалуйста, заполните все поля")
+            else:
+                st.warning("Пожалуйста, прикрепите документ")
 
 # -------------------------------------------------------------------------- #
     with right_column:

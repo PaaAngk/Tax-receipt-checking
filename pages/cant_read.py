@@ -59,9 +59,6 @@ def print_box_in_pdf(file, not_readed_data):
         annotation = create_rect(item['coords'])
         print(annotation)
         writer.add_annotation(page_number=int(item['page']), annotation=annotation)
-    writer.add_annotation(page_number=0, annotation=AnnotationBuilder.rectangle(
-            rect=(10, 10, 550, 800),
-        ))
     with BytesIO() as bytes_stream:
         return base64.b64encode(writer.write(bytes_stream)[1].getvalue() ).decode("utf-8")
 
@@ -94,7 +91,7 @@ if result:
                 try:
                     with open(file_path, "rb") as file:
                         not_readed_data = item['not_readed_data']
-                        base64_pdf = base64.b64encode(file.read()).decode("utf-8")
+                        # base64_pdf = base64.b64encode(file.read()).decode("utf-8")
                         # base64_pdf = print_box_in_pdf(file_path, not_readed_data[0])
                         base64_pdf = print_box_in_pdf(file_path, not_readed_data)
                         file.close() 

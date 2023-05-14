@@ -21,8 +21,6 @@ detector = cv2.wechat_qrcode_WeChatQRCode(
   "./model/sr.caffemodel")
 
 def decode_qr_data(texts):
-
-  print(texts)
   try:
     if hasattr(texts, 'data'):
       text_value = texts.data.decode('utf-8')
@@ -158,13 +156,12 @@ def crop_qr(detection_qr):
 
 def read_by_openCV(img):
   res, _ = detector.detectAndDecode(cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR))
-  st.write(res)
   return res
 
 def read_qr(page, print_result = True):
   detection_qr = nn_recognition_qrs(page["image"])
   qr_coords  = json.loads(detection_qr.pandas().xyxy[0].to_json(orient="records"))
-  st.write(qr_coords)
+  # st.write(qr_coords)
 
   #Getting array of detected QRs by NN 
   scanned_QRs = [ImageOps.grayscale(Image.fromarray(x['im']))for x in detection_qr.crop(save=False)]
@@ -172,34 +169,33 @@ def read_qr(page, print_result = True):
   formatingReadData = []
 
   for img, coords in zip(scanned_QRs, qr_coords):
-    st.image(img)
+    # st.image(img)
 
-    t1 = time()
+    # t1 = time()
     scanned_qr = pyzbar.decode(img, [ZBarSymbol.QRCODE])
-    t2 = time()
-    st.write('Time Taken : ', round(1000*(t2 - t1),1), ' ms')
+    # t2 = time()
+    # st.write('Time Taken : ', round(1000*(t2 - t1),1), ' ms')
     # st.write(scanned_qr)
 
     formating_decode = formating_decode_qr_result(scanned_qr, img, page["page"], coords, print_result)
 
     if formating_decode["status"] == "can not read":
-      formating_decode = modify_image_and_read_qr(img, page["page"], coords,  print_result)
-      # scanned_qr = read_by_openCV(img, print_result)
-      # formating_decode = formating_decode_qr_result([scanned_qr[0]] if scanned_qr else None, img, page["page"], coords, print_result)
-    
+      # formating_decode = modify_image_and_read_qr(img, page["page"], coords,  print_result)
+      scanned_qr = read_by_openCV(img)
+      formating_decode = formating_decode_qr_result([scanned_qr[0]] if scanned_qr else None, img, page["page"], coords, print_result)
     formatingReadData.append(formating_decode)
 
   return formatingReadData
 
 # Formate decoded qr data to output dict: success scan, is not check qr and is not read 
 def formating_decode_qr_result(scanned_qr, image, page, coords, print_result = True):
-  st.write(scanned_qr)
+  # st.write(scanned_qr)
   readed_image = {}
   coords = {
-              "xmin":coords["xmin"],
-              "ymin":coords["ymin"],
-              "xmax":coords["xmax"],
-              "ymax":coords["ymax"],
+              "xmin":int(coords["xmin"]),
+              "ymin":int(coords["ymin"]),
+              "xmax":int(coords["xmax"]),
+              "ymax":int(coords["ymax"]),
             }
   if scanned_qr:
     for qrs in scanned_qr:
@@ -233,10 +229,10 @@ def run_read_image(img):
 
 def nn_recognition_qrs(img):
   start_time = time()
-  model.conf = 0.82
+  model.conf = 0.795
   results = model(img)
 
-  st.write("NN read time: ", (time() - start_time))
+  # st.write("NN read time: ", (time() - start_time))
   return results
 
 # ------------------ Document proccesing ---------------------#
@@ -255,7 +251,7 @@ def get_images_from_pdf(document):
         "page": pageObj_images_number
       }) 
       count += 1
-  st.write(images)  
+  # st.write(images)  
   return images
 
 def get_images_from_tif(document):
@@ -268,7 +264,7 @@ def get_images_from_tif(document):
       "image" : img,
       "page": index
     }) 
-  st.write(images)
+  # st.write(images)
   return images
 
 

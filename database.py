@@ -44,6 +44,20 @@ def insert_document(doc_type, doc_number, doc_date, doc_create_date, doc_creater
         "not_readed_data": not_readed_data
     })
 
+# --- Document  ---
+def update_document(key, doc_type, doc_number, doc_date, doc_create_date, doc_creater, file_name, status, not_readed_data):
+    """Returns the user on a successful user creation, otherwise raises and error"""
+    return db_doc.update({
+        "doc_number": doc_number, 
+        "doc_type": doc_type, 
+        "doc_date": doc_date, 
+        "doc_create_date": doc_create_date, 
+        "doc_creater": doc_creater,
+        "file_name" : file_name,
+        "status": status,
+        "not_readed_data": not_readed_data
+    }, key)
+
 
 def fetch_all_document():
     """Returns a dict of all users"""

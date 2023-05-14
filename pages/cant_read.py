@@ -88,7 +88,7 @@ if result:
         with col6:
             col6.write(item['status'] if item['status'] != None else 'Нет данных')
         with col7:
-            if st.button("Просмотреть документ", key=index):
+            if st.button("Просмотреть документ", key=index+500):
                 try:
                     with open(file_path, "rb") as file:
                         not_readed_data = item['not_readed_data']
@@ -132,14 +132,13 @@ if result:
                 except FileNotFoundError:
                     st.write("Не удалось найти файл")
         with col9:
-            if st.button("Проверить повторно", key=index+1000):
-                st.experimental_set_query_params(
-                    file_path=file_path
-                )
-                # Получаем параметры запроса
-                params = st.experimental_get_query_params()
-                # Печатаем параметры запроса
-                js_redirect("http://localhost:8501/?file_path="+str(file_path))
+             if st.button("Проверить повторно", key=index+2000):
+                try:
+                    js_redirect("http://localhost:8501/?file_path="+str(file_path))
+                except FileNotFoundError:
+                    st.write("Не удалось найти файл")   
+
+                        
 
             
 

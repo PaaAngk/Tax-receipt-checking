@@ -9,6 +9,9 @@ from multiprocessing import Pool
 import time
 from st_pages import Page, show_pages
 import datetime
+from datetime import datetime
+from io import BytesIO
+import base64
 
 st.set_page_config(page_title="Электронный архив", page_icon=":bar_chart:", layout="wide")
 
@@ -133,22 +136,40 @@ def save_uploadedfile(uploadedfile, doc_type, doc_number, doc_date, system_date)
     return file_name
 
 def parse_enter_document(enter_file):
-    _, file_extension = enter_file.type.split('/')
-    if file_extension == "pdf":
-        try:
-            return rec.get_images_from_pdf(enter_file)
-        except Exception:
-            st.error("except document reading")
-            return
+    if enter_file is not None:
+        _, file_extension = enter_file.split('.')
+        if file_extension == "pdf":
+            try:
+                return rec.get_images_from_pdf(enter_file)
+            except Exception:
+                st.error("except document reading")
+                return
 
-    if file_extension == "tif" or file_extension == "tiff":
-        try:
-            return rec.get_images_from_tif(enter_file)
-        except Exception:
-            st.error("except document reading")
-            return
+        if file_extension == "tif" or file_extension == "tiff":
+            try:
+                return rec.get_images_from_tif(enter_file)
+            except Exception:
+                st.error("except document reading")
+                return
+       
  
+params = st.experimental_get_query_params()
+path_file_check = params.get("file_path", [None])[0]
+path=path_file_check
+print("Здесь путь к файлу " + path_file_check)
+type_with_all, doc_number_check, doc_date_check, system_date_check, enter_file_check = path_file_check.split("__")
+type_with_all = os.path.basename(type_with_all)
+doc_type_check = type_with_all.split("__")[0]
+print(doc_type_check, doc_number_check, doc_date_check, system_date_check, enter_file_check )
 
+with open(path_file_check, 'rb') as f:
+    contents = f.read()
+    #data = base64.b64encode(contents).decode('utf-8')
+    #enter_file_check_file = f"data:application/pdf;base64,{data}"
+    
+
+#params = st.experimental_get_query_params()
+path_file_check = params.get("file_path", None)
 # ---- MAINPAGE ----
 if authentication_status:
     st.title("Сохранение документа")
@@ -162,11 +183,26 @@ if authentication_status:
     with left_column:
         st.subheader("Загрузка документа:")
         with st.form("doc"):
-            doc_type = st.selectbox("Выберите тип документа", document_types)
-            doc_number = st.text_input("Номер документа")
-            doc_date = st.date_input("Дата")
-            enter_file = st.file_uploader("Загрузить документ", type=["pdf", "tif", "tiff"], )
+            if params:
+                doc_type_index = document_types.index(doc_type_check)
+                doc_type = st.selectbox("Выберите тип документа", document_types, index=doc_type_index)
+                doc_number = st.text_input("Номер документа", value = doc_number_check )
+                doc_date = st.date_input("Дата", value=datetime.strptime(doc_date_check, "%d-%m-%Y"))
+                #enter_file = st.file_uploader("Загрузить документ", type=["pdf", "tif", "tiff"], )
+                
+                ext=enter_file_check.split(".")[-1]
+                print("Это расширение", ext)
+                #enter_file = {"content": contents, "type": f"application/{ext}", "name": path_file_check}
+                enter_file=path 
+                
+            else:
+                doc_type = st.selectbox("Выберите тип документа", document_types)
+                doc_number = st.text_input("Номер документа")
+                doc_date = st.date_input("Дата")
+                enter_file = st.file_uploader("Загрузить документ", type=["pdf", "tif", "tiff"], )
+               
             submitted = st.form_submit_button("Сохранить")
+
             
             progress_text = "Операция выполняется. Пожалуйста, подождите"
             
@@ -174,7 +210,7 @@ if authentication_status:
                 if enter_file:
                     scanned_qr = []
                     if doc_type and doc_number and doc_date:
-                        doc_date_to_save = time.mktime(doc_date.timetuple())
+                        doc_date_to_save = doc_date
                         system_date = date.today().strftime("%d-%m-%Y")
 
                         if doc_type=="Авансовый отчёт":

@@ -149,7 +149,13 @@ def parse_enter_document(enter_file):
             st.error("except document reading")
             return
  
-
+params = st.experimental_get_query_params()
+path_file_check = params.get("file_path", [None])[0]
+print("Здесь путь к файлу " + path_file_check)
+type_with_all, doc_number_check, doc_date_check, system_date_check, enter_file_check = path_file_check.split("__")
+type_with_all = os.path.basename(type_with_all)
+doc_type_check = type_with_all.split("__")[0]
+print(doc_type_check, doc_number_check, doc_date_check, system_date_check, enter_file_check )
 # ---- MAINPAGE ----
 if authentication_status:
     st.title("Сохранение документа")

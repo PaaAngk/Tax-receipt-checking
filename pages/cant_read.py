@@ -69,7 +69,7 @@ if result:
         with col6:
             col6.write(item['status'] if item['status'] != None else 'Нет данных')
         with col7:
-            if st.button("Просмотреть документ", key=index):
+            if st.button("Просмотреть документ", key=index+500):
                 try:
                     file_path = os.getcwd() + '/tempDir/'+item['file_name']
                     with open(file_path, "rb") as file:
@@ -91,7 +91,7 @@ if result:
                 except FileNotFoundError:
                     st.write("Не удалось найти файл")
         with col8:
-            if st.button("Скачать PDF файл", key=index+100):
+            if st.button("Скачать PDF файл", key=index+1000):
                 try:
                     file_path = os.getcwd() + '/tempDir/'+item['file_name']
                     file_name = item['file_name'].split('__')[-1]
@@ -112,17 +112,14 @@ if result:
                 except FileNotFoundError:
                     st.write("Не удалось найти файл")
         with col9:
-             if st.button("Проверить повторно", key=index+1):
-                st.experimental_set_query_params(
-                file_path=file_path
-            )
+             if st.button("Проверить повторно", key=index+2000):
+                try:
+                    file_path = os.getcwd() + '/tempDir/'+item['file_name']
+                    js_redirect("http://localhost:8501/?file_path="+str(file_path))
+                except FileNotFoundError:
+                    st.write("Не удалось найти файл")   
 
-            # Получаем параметры запроса
-                params = st.experimental_get_query_params()
-
-            # Печатаем параметры запроса
-                print(params)
-                js_redirect("http://localhost:8501/%22)
+                        
 
             
 
